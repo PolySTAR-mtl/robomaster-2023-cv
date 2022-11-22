@@ -1,4 +1,4 @@
-/** \file serial_spinner.cpp
+/** \file legacy_serial_spinner.cpp
  * \brief Serial spinner class to interface with the boards
  *
  * \author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -6,8 +6,8 @@
 
 // Local includes
 
-#include "serial_spinner.hpp"
-#include "protocol.hpp"
+#include "legacy_serial_spinner.hpp"
+#include "legacy_protocol.hpp"
 
 // Std includes
 
@@ -22,6 +22,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
+
+namespace legacy {
 
 SerialSpinner::SerialSpinner(ros::NodeHandle& n, const std::string& device,
                              int _baud, int _len, int _stop, bool _parity,
@@ -121,7 +123,9 @@ void SerialSpinner::initSerial(const std::string& device) {
     int err = cfsetispeed(&tty, B230400);
     err += cfsetospeed(&tty, B230400);
 
-    if(err != 0) { throw std::runtime_error("Could not set IOspeed"); }
+    if (err != 0) {
+        throw std::runtime_error("Could not set IOspeed");
+    }
 
     // Aaaand .. we're done ! Commit to the OS
     if (tcsetattr(fd, TCSANOW, &tty) != 0) {
@@ -157,8 +161,8 @@ void SerialSpinner::handleSerial() {
     }
 
     uint8_t* ptr = reinterpret_cast<uint8_t*>(&cmd);
-    for(auto i = 0u; i < sizeof(cmd); ++i) {
-	    std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
+    for (auto i = 0u; i < sizeof(cmd); ++i) {
+        std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
     }
 
     std::cout << '\n';
@@ -184,7 +188,7 @@ void SerialSpinner::handleSerial() {
             return;
         }
 
-	std::cout << static_cast<unsigned int>(data_sw) << '\n';
+        std::cout << static_cast<unsigned int>(data_sw) << '\n';
 
         // Create ROS message
         switch (data_sw) {
@@ -256,10 +260,10 @@ void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
               << '\n';
 
     uint8_t* ptr = reinterpret_cast<uint8_t*>(&msg);
-    for(auto i = 0u; i < sizeof(msg); ++i) {
-	    std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
+    for (auto i = 0u; i < sizeof(msg); ++i) {
+        std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
     }
-    std::cout << std::dec <<'\n';
+    std::cout << std::dec << '\n';
 
     int bytes = write(fd, &msg, sizeof(msg));
     if (bytes != sizeof(msg)) {
@@ -270,3 +274,5 @@ void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
 void SerialSpinner::callbackRune(const serial::RuneConstPtr&) {
     ROS_DEBUG("Unimplemented callback (SerialSpinner::callBackRune");
 }
+
+} // namespace legacy

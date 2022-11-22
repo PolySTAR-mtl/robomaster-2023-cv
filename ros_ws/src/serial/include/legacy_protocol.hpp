@@ -1,4 +1,4 @@
-/** \file protocol.cpp
+/** \file legacy_protocol.cpp
  * \brief Serial protocol definition
  *
  * \author Sébastien Darche <sebastien.darche@polymtl.ca>

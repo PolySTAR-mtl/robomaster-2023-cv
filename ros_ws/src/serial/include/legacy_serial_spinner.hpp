@@ -1,4 +1,4 @@
-/** \file serial_spinner.hpp
+/** \file legacy_serial_spinner.hpp
  * \brief Serial spinner class to interface with the boards
  *
  * \author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -18,9 +18,11 @@
 #include "serial/Rune.h"
 #include "serial/Target.h"
 
+namespace legacy {
+
 /** \class SerialSpinner
  */
-class SerialSpinner {
+class [[deprecated]] SerialSpinner {
   public:
     /** \brief Constructor
      */
@@ -70,5 +72,7 @@ class SerialSpinner {
     bool parity;
     double frequency;
 };
+
+} // namespace legacy
 
 #endif

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(serial)
 
 # Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++17)
+set(CMAKE_CXX_STANDARD 17)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
@@ -46,7 +46,7 @@ include_directories(
 
 add_executable(serial_interface
   src/serial_interface.cpp
-  src/serial_spinner.cpp
+  src/legacy_serial_spinner.cpp
 )
 
 target_link_libraries(serial_interface

@@ -10,7 +10,7 @@
 
 // Local includes
 
-#include "serial_spinner.hpp"
+#include "legacy_serial_spinner.hpp"
 
 /** \brief This node serves as the main interface to the serial port
  */
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
     nh.param("stop", stop, 1);
     nh.param("parity", parity, false);
 
-    SerialSpinner ser(nh, device, baud, length, stop, parity);
+    legacy::SerialSpinner ser(nh, device, baud, length, stop, parity);
 
     ser.spin();
 }
