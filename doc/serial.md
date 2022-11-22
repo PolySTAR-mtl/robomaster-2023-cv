@@ -1,6 +1,6 @@
 # Serial link with the Control & Systems team
 
-The serial protocol is defined in the following [Google Document](https://docs.google.com/document/d/1_WRp8hKwjJ7E_uIMwRmgCmimuRtpEut-U4GsiJyBkTw).
+The serial protocol is defined at the end of the present document.
 
 The serial settings are as followed (and described in `ros_ws/data/serial.yaml`) :
 
@@ -15,7 +15,6 @@ The serial settings are as followed (and described in `ros_ws/data/serial.yaml`)
 The `serial_interface` node **listens** to the following topics : 
 
 - `/serial/target` : Coordinates of the current target, to be passed to the turret;
-- `/serial/rune` : Coordinates of the rune (unused as of today);
 
 The `serial_interface` node **publishes** to the following topics :
 
@@ -23,6 +22,8 @@ The `serial_interface` node **publishes** to the following topics :
 - `/serial/hp` : Health points of the robots;
 
 The corresponding messages are defined in the serial package (`ros_ws/src/serial/msg`).
+
+`TODO` : Add position, reference frame publishing topics
 
 ## Jetson setup
 
@@ -42,3 +43,172 @@ sudo systemctl disable nvgetty
 
 Followed by a reboot.
 
+# New serial protocol
+
+## Configuration
+
+Board A : UART 7
+
+Jetson : UART 2 (pins 8 (TX) and 10 (RX))
+
+230400-8N1 - Little endian
+
+8 bits 230400 baud 1 stop bit & no parity bit
+
+## Protocol
+
+General message layout
+
+|   SOF  | `cmd_id`  | `data_len` | `data ` |
+|--------|-----------|------------|---------|
+| 1 byte |  1 byte  |  1 byte    |         |
+| Fixed value : `0xFC` |      |   Length of `data`, in bytes |       |
+
+`cmd_id` possible values : 
+
+CS -> CV
+
+| Code    |     Description      |  `data_len` |
+|---------|----------------------|-------------|
+| `0x01`  | Game status          | 14          |
+| `0x02`  | Event (taproot: gamestage)   | 2        |
+| `0x03`  | Turret feedback      | 4            |
+| `0x04`  | Position feedback    | 22           |
+
+CV -> CS
+
+| Code    |     Description      |  `data_len` |
+|---------|----------------------|-------------|
+| `0x10`  | Turret target        | 4           |
+| `0x11`  | Movements            | 6           |
+| `0x12`  | Shoot order          | 0 (no data) |
+
+## Commands
+
+### Game status
+
+Value : `0x01`
+
+Frequency : 1 Hz, or caused by a control mode change
+
+Size : 14 bytes
+
+Contents :
+- Robot type
+- Team
+- HP (Twice, for each team)
+    - STD 16 bits
+    - HRO 16 bits
+    - STY 16 bits
+- Control mode
+
+| Offset  | Size | Desc        |
+|---------|------|-------------|
+| 0       | 1    | Robot type : 0 -> STD, 1 -> HRO, 2 -> STY. MSB : Team (0b0 : Red, 0b1 : Blue) |
+| 1       | 2    | Red STD HP   |
+| 3       | 2    | Red HRO HP   |
+| 5       | 2    | Red STY HP   |
+| 7       | 2    | Blue STD HP  |
+| 9       | 2    | Blue HRO HP   |
+| 11      | 2    | Blue STY HP   |
+| 13      | 1    | Mode : 0 -> Manual, 1 -> Auto aim, 2 -> Auto shoot, 3 -> Full auto |
+
+### Event
+
+Value : `0x02`
+
+Frequency : at each change
+
+Size : 2 bytes
+
+Contents : Taproot event gamestage
+
+| Offset  | Size | Desc        |
+|---------|------|-------------|
+| 0       | 2    | enum GameStage value |
+
+
+### Turret Feedback
+
+Value : `0x03`
+
+Frequency : 100 Hz
+
+Size : 4 bytes
+
+Contents : Turret position
+- Encoder value in millirad (`int16_t`)
+- Reference frame : Straight ahead
+
+| Offset  | Size | Desc          |
+|---------|------|---------------|
+| 0       | 2    | Pitch (theta) |
+| 2       | 2    | Yaw (phi)     |
+
+### Position Feedback
+
+Value : `0x04`
+
+Frequency : 100 Hz
+
+Size : 22 bytes
+
+Contents : Feedback from the sensors
+
+Units :
+- Linear accel : mm . s^-2, `int16_t`
+- Angular accel : millirad . s^-2, `int16_t`
+- Encoders : N/A, `int16_t`
+- \Delta_t : microseconds (10^-6 s) , `uint16_t`
+
+| Offset  | Size | Desc        |
+|---------|------|-------------|
+| 0       | 2    | IMU A_x     |
+| 2       | 2    | IMU A_y     |
+| 4       | 2    | IMU A_z     |
+| 6       | 2    | IMU R_x     |
+| 8       | 2    | IMU R_y     |
+| 10      | 2    | IMU R_z     |
+| 12      | 2    | Enc. 1      |
+| 14      | 2    | Enc. 2      |
+| 16      | 2    | Enc. 3      |
+| 18      | 2    | Enc. 4      |
+| 20      | 2    | \Delta_t    |
+
+### Turret target
+
+Value : `0x10`
+
+Frequency : As fast as possible (~30 Hz)
+
+Size : 4 bytes
+
+Contents : Current turret target from the targeting system, already solved
+for distance (ballistics)
+
+Units & reference frame : see Turret feedback.
+
+| Offset  | Size | Desc          |
+|---------|------|---------------|
+| 0       | 2    | Pitch (theta) | 
+| 2       | 2    | Yaw (phi)     |
+
+### Movements
+
+Value : `0x11`
+
+Frequency : TBD
+
+Size : 6 bytes
+
+Contents : Speed control when in full auto mode
+
+Units :
+- Linear speed : mm . s^-1
+- Rotation : millirad . s^-1
+
+| Offset  | Size | Desc        |
+|---------|------|-------------|
+| 0       | 2    | V_x         |
+| 2       | 2    | V_y         |
+| 4       | 2    | Omega       |
