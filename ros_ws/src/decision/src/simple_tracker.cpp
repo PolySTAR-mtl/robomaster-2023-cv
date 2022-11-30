@@ -51,8 +51,30 @@ class SimpleTracker {
         }
         
         auto roboType = [](bbox){
-            if bbox.class == car:
-                findBoxes(bbox);
+            found = False
+            if bbox.class == std {
+                enemy_boxes [] = findBoxes(bbox);
+                for (int i = 0; i < sizeof(enemy_boxes); i++) {
+                    if enemy_boxes[i].class == enemy {
+                        found = True 
+                        }
+                }
+                if found {
+                return 300;
+                }
+            }
+            if bbox.class == hero {
+                enemy_boxes [] = findBoxes(bbox);
+                for (int i = 0; i < sizeof(enemy_boxes); i++) {
+                    if enemy_boxes[i].class == enemy {
+                        found = True
+                        }
+                }
+                if found {
+                return 1000;
+                }
+            }
+            
                     
             On check pour tous les car/std/hero
             si ils ont des bbox enemie à l'int
