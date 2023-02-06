@@ -20,6 +20,7 @@ add_message_files(
   Rune.msg
   SwitchOrder.msg
   Target.msg
+  Movement.msg
 )
 
 generate_messages()
@@ -47,6 +48,7 @@ include_directories(
 add_executable(serial_interface
   src/serial_interface.cpp
   src/legacy_serial_spinner.cpp
+  src/serial_spinner.cpp
 )
 
 target_link_libraries(serial_interface
