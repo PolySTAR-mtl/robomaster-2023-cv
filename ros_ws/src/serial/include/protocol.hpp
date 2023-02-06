@@ -11,57 +11,30 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <variant>
+
 namespace serial {
 
 // Constants
 
 constexpr uint8_t START_FRAME = 0xFCu;
 
-/** \enum cmd
- * \brief Possible commands
- */
-enum class cmd : uint8_t {
-    // CS -> CV
-    Status = 0x01,
-    Gamestage = 0x02,
-    TurretFeedback = 0x03,
-    PositionFeedback = 0x04u,
+template <typename T> struct Header {
+    const uint8_t start_byte = START_FRAME;
+    const uint8_t cmd_id = T::ID;
+    const uint8_t data_len = size() - sizeof(Header);
 
-    // CV -> CS
-    Target = 0x10,
-    Move = 0x11,
-    Shoot = 0x12
-};
+    constexpr std::size_t size() const { return sizeof(T); }
+} __attribute__((packed));
 
-struct Header {
-    const uint8_t start_byte = 0xFCu;
-    const cmd cmd_id;
-    const uint8_t data_len;
-
-    template <typename T> static Header create() {
-        return Header(T::cmd_id, sizeof(T));
-    }
-
-  private:
-    Header(cmd id, uint8_t len) : cmd_id(id), data_len(len) {}
-};
-
-/** \class Message
- * \brief Generic message type
- */
-template <typename T> class Message {
-  public:
-    size_t write(int fd);
-
-  private:
-    Header header;
-    T payload;
+struct None : Header<None> {
+    static constexpr uint8_t ID = 0xFF;
 };
 
 // Payloads
 
-struct Status {
-    static constexpr cmd cmd_id = cmd::Status;
+struct Status : Header<Status> {
+    static constexpr uint8_t ID = 0x01;
 
     uint8_t robot_type;
     uint16_t red_std_hp;
@@ -73,21 +46,21 @@ struct Status {
     uint8_t mode;
 } __attribute__((packed));
 
-struct Gamestage {
-    static constexpr cmd cmd_id = cmd::Gamestage;
+struct Gamestage : Header<Gamestage> {
+    static constexpr uint8_t ID = 0x02;
 
     uint16_t gamestage;
 } __attribute__((packed));
 
-struct TurretFeedback {
-    static constexpr cmd cmd_id = cmd::TurretFeedback;
+struct TurretFeedback : Header<TurretFeedback> {
+    static constexpr uint8_t ID = 0x03;
 
     int16_t pitch;
     int16_t yaw;
 } __attribute__((packed));
 
-struct PositionFeedback {
-    static constexpr cmd cmd_id = cmd::PositionFeedback;
+struct PositionFeedback : Header<PositionFeedback> {
+    static constexpr uint8_t ID = 0x04;
 
     int16_t imu_ax;
     int16_t imu_ay;
@@ -102,23 +75,38 @@ struct PositionFeedback {
     int16_t delta_t;
 } __attribute__((packed));
 
-struct Target {
-    static constexpr cmd cmd_id = cmd::Target;
+struct TargetOrder : Header<TargetOrder> {
+    static constexpr uint8_t ID = 0x10;
 
     int16_t pitch;
     int16_t yaw;
 } __attribute__((packed));
 
-struct Move {
-    static constexpr cmd cmd_id = cmd::Move;
+struct Move : Header<Move> {
+    static constexpr uint8_t ID = 0x11;
 
     int16_t v_x;
     int16_t v_y;
     int16_t omega;
 } __attribute__((packed));
 
-struct Shoot {
-    static constexpr cmd cmd_id = cmd::Shoot;
+struct Shoot : Header<Shoot> {
+    static constexpr uint8_t ID = 0x12;
 } __attribute__((packed));
+
+union IncomingMessage {
+    Header<None> header;
+    Status status;
+    Gamestage gamestage;
+    TurretFeedback turret_feedback;
+    PositionFeedback position_feedback;
+};
+
+union OutgoingMessage {
+    Header<None> header;
+    TargetOrder target_order;
+    Move move_order;
+    Shoot shoot_order;
+};
 
 } // namespace serial
