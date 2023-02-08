@@ -98,7 +98,7 @@ class SimpleTracker {
         
         auto roboType = [](bbox){
             found = False
-            if bbox.clss == 6 //if car (standard) {
+            if bbox.clss == 4 //if car (standard) {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
                     if enemy_boxes[i].clss == enemy {
@@ -109,7 +109,7 @@ class SimpleTracker {
                 return 400;
                 }
             }
-            if bbox.clss == 7 //création d'une septième classe (hero) dans detection/data/dji.names si possible {
+            if bbox.clss == 5 //création d'une septième classe (hero) dans detection/data/dji.names si possible {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
                     if enemy_boxes[i].clss == enemy {
@@ -120,7 +120,7 @@ class SimpleTracker {
                 return 1000;
                 }
             }
-            if bbox.clss == 4 //if base {
+            if bbox.clss == 3 //if base {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
                     if enemy_boxes[i].clss == enemy {
@@ -131,7 +131,7 @@ class SimpleTracker {
                 return 200;
                 }
             }
-            if bbox.clss == 5 //juste robot (donc pour la sentry qu'on ne peut pas classer en ce moment) {
+            if bbox.clss == 6 //juste robot (donc pour la sentry qu'on ne peut pas classer en ce moment) {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
                     if enemy_boxes[i].clss == enemy {
