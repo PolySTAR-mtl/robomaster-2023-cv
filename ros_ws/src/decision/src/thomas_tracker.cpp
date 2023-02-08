@@ -1,4 +1,4 @@
-/** \file simple_tracker.cpp
+/** \file thomas_tracker.cpp
  * \brief Simple targeting node
  *
  * \author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -98,7 +98,7 @@ class SimpleTracker {
         
         auto roboType = [](bbox){
             found = False
-            if bbox.clss == std {
+            if bbox.clss == 6 //if car (standard) {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
                     if enemy_boxes[i].clss == enemy {
@@ -106,10 +106,10 @@ class SimpleTracker {
                         }
                 }
                 if found {
-                return 300;
+                return 400;
                 }
             }
-            if bbox.clss == hero {
+            if bbox.clss == 7 //création d'une septième classe (hero) dans detection/data/dji.names si possible {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
                     if enemy_boxes[i].clss == enemy {
@@ -118,6 +118,28 @@ class SimpleTracker {
                 }
                 if found {
                 return 1000;
+                }
+            }
+            if bbox.clss == 4 //if base {
+                auto enemy_boxes = findBoxes(bbox);
+                for (int i = 0; i < sizeof(enemy_boxes); i++) {
+                    if enemy_boxes[i].clss == enemy {
+                        found = True;
+                    }
+                }
+                if found{
+                return 200;
+                }
+            }
+            if bbox.clss == 5 //juste robot (donc pour la sentry qu'on ne peut pas classer en ce moment) {
+                auto enemy_boxes = findBoxes(bbox);
+                for (int i = 0; i < sizeof(enemy_boxes); i++) {
+                    if enemy_boxes[i].clss == enemy {
+                        found = True;
+                    }
+                }
+                if found{
+                return 300;
                 }
             }
                 return 0;
