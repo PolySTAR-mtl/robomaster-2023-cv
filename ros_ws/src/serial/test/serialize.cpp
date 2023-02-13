@@ -39,6 +39,10 @@ TEST(Serialize, TargetOrder) {
     };
 
     serial::msg::OutgoingMessage msg{.target_order = {}};
+
+    msg.target_order.pitch = 0;
+    msg.target_order.yaw = 0;
+
     auto obtained = SerialSpinner::serializeMessage(msg);
 
     EXPECT_EQ(sizeof(expected), obtained.size());
@@ -59,9 +63,37 @@ TEST(Serialize, TargetOrder) {
     check_array(obtained2, expected2);
 }
 
-TEST(Serialize, MoveOrder) {}
+TEST(Serialize, MoveOrder) {
+    // Coordinates (0, 0, 0)
 
-TEST(Serialize, Shoot) {}
+    uint8_t expected[] = {0xFC, 0x11, 6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+    serial::msg::OutgoingMessage msg{.move_order = {}};
+
+    msg.move_order.v_x = 0;
+    msg.move_order.v_y = 0;
+    msg.move_order.omega = 0;
+
+    auto obtained = SerialSpinner::serializeMessage(msg);
+
+    EXPECT_EQ(sizeof(expected), obtained.size());
+    check_array(obtained, expected);
+}
+
+TEST(Serialize, Shoot) {
+    uint8_t expected[] = {
+        0xFC,
+        0x12,
+        0x00,
+    };
+
+    serial::msg::OutgoingMessage msg{.shoot_order = {}};
+
+    auto obtained = SerialSpinner::serializeMessage(msg);
+
+    EXPECT_EQ(sizeof(expected), obtained.size());
+    check_array(obtained, expected);
+}
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
