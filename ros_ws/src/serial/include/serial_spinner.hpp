@@ -48,6 +48,12 @@ class SerialSpinner {
      */
     void spin();
 
+    /** \fn serializeMessage
+     * \brief Serialize a message to a buffer
+     */
+    static std::vector<uint8_t>
+    serializeMessage(const serial::msg::OutgoingMessage& message);
+
   private:
     /** \fn initSerial
      * \brief Initializes the serial file descriptor. To be called by the
@@ -61,8 +67,14 @@ class SerialSpinner {
      */
     void handleSerial();
 
+    /** \fn handleMessage
+     * \brief Handle an incoming serial message depending on its type
+     */
     template <typename T> void handleMessage(const T& message);
 
+    /** \fn sendMessage
+     * \brief Send an outgoing message
+     */
     void sendMessage(const serial::msg::OutgoingMessage& message);
 
     ros::NodeHandle& nh;

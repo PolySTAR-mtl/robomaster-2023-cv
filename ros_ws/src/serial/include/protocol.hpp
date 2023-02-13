@@ -22,14 +22,16 @@ constexpr uint8_t START_FRAME = 0xFCu;
 template <typename T> struct Header {
     const uint8_t start_byte = START_FRAME;
     const uint8_t cmd_id = T::ID;
-    const uint8_t data_len = size() - sizeof(Header);
+    volatile uint8_t data_len =
+        sizeof(T) - sizeof(Header); // Marked as volatile as to ensure no
+                                    // optimzation from the compiler
 
-    constexpr std::size_t size() const { return sizeof(T); }
-} __attribute__((packed));
+    std::size_t size() const { return data_len + sizeof(Header); }
+} __attribute__((packed, aligned(1)));
 
 struct None : Header<None> {
     static constexpr uint8_t ID = 0xFF;
-};
+} __attribute__((packed));
 
 // Payloads
 

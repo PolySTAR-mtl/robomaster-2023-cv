@@ -49,14 +49,15 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_library(serial_spinner src/serial_spinner)
+
 add_executable(serial_interface
   src/serial_interface.cpp
-  src/legacy_serial_spinner.cpp
-  src/serial_spinner.cpp
 )
 
 target_link_libraries(serial_interface
   ${catkin_LIBRARIES}
+  serial_spinner
 )
 
 add_dependencies(serial_interface ${${PROJECT_NAME}_EXPORTED_TARGETS})
@@ -71,5 +72,6 @@ add_dependencies(serial_interface ${${PROJECT_NAME}_EXPORTED_TARGETS})
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+
+catkin_add_gtest(serialize test/serialize.cpp)
+target_link_libraries(serialize serial_spinner ${catkin_LIBRARIES})

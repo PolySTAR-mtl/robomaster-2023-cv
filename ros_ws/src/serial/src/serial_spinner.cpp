@@ -284,7 +284,7 @@ void SerialSpinner::handleSerial() {
 
 void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
     using namespace serial::msg;
-    OutgoingMessage order{};
+    OutgoingMessage order{.target_order = {}};
 
     TargetOrder& msg = order.target_order;
 
@@ -298,7 +298,7 @@ void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
 
 void SerialSpinner::callbackMovement(const serial::MovementConstPtr& move) {
     using namespace serial::msg;
-    OutgoingMessage order{};
+    OutgoingMessage order{.move_order = {}};
 
     Move& msg = order.move_order;
 
@@ -314,14 +314,29 @@ void SerialSpinner::callbackMovement(const serial::MovementConstPtr& move) {
 
 void SerialSpinner::sendMessage(const serial::msg::OutgoingMessage& message) {
     auto msg_size = message.header.size();
+
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&message);
-    for (auto i = 0u; i < msg_size; ++i) {
-        std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
-    }
-    std::cout << std::dec << '\n';
 
     int bytes = write(fd, ptr, message.header.size());
     if (bytes != msg_size) {
         ROS_ERROR("Could not write to serial : %s", strerror(errno));
     }
+}
+
+std::vector<uint8_t>
+SerialSpinner::serializeMessage(const serial::msg::OutgoingMessage& message) {
+    auto msg_size = message.header.size();
+
+    std::vector<uint8_t> vec(msg_size, 0u);
+
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&message);
+
+    for (auto i = 0u; i < msg_size; ++i) {
+        vec[i] = ptr[i];
+        std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
+    }
+
+    std::cout << std::dec << '\n';
+
+    return vec;
 }
