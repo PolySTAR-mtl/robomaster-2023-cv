@@ -13,8 +13,10 @@
 
 // ROS includes
 
-#include "serial/HP.h"
-#include "serial/SwitchOrder.h"
+#include "serial/GameStage.h"
+#include "serial/GameStatus.h"
+#include "serial/PositionFeedback.h"
+#include "serial/TurretFeedback.h"
 
 // OS includes
 
@@ -23,6 +25,29 @@
 #include <termios.h>
 #include <unistd.h>
 
+namespace utils {
+
+constexpr float fromMillimeter(int16_t mm_s) {
+    // mm/s to m/s
+    return static_cast<float>(mm_s) * 1.e-3f;
+}
+
+constexpr float fromAngularSpeed(int16_t omega) {
+    // Millirad/s to rad/s
+    return static_cast<float>(omega) * 1.e-3f;
+}
+
+constexpr int16_t toMillimeter(float m_s) {
+    // m/s to mm/s
+    return static_cast<uint16_t>(m_s * 1e3);
+}
+
+constexpr int16_t toAngularSpeed(float omega) {
+    // Rad/s to millirad/s
+    return static_cast<uint16_t>(omega * 1e3);
+}
+} // namespace utils
+
 SerialSpinner::SerialSpinner(ros::NodeHandle& n, const std::string& device,
                              int _baud, int _len, int _stop, bool _parity,
                              double _freq)
@@ -30,8 +55,10 @@ SerialSpinner::SerialSpinner(ros::NodeHandle& n, const std::string& device,
       frequency(_freq) {
     initSerial(device);
 
-    pub_hp = nh.advertise<serial::HP>("hp", 1);
-    pub_switch = nh.advertise<serial::SwitchOrder>("switch", 1);
+    pub_status = nh.advertise<serial::GameStatus>("gamestatus", 1);
+    pub_stage = nh.advertise<serial::GameStage>("gamestage", 1);
+    pub_turret = nh.advertise<serial::TurretFeedback>("turret", 1);
+    pub_position = nh.advertise<serial::PositionFeedback>("position", 1);
 
     sub_target =
         nh.subscribe("target", 1, &SerialSpinner::callbackTarget, this);
@@ -144,33 +171,75 @@ void SerialSpinner::spin() {
 }
 
 template <>
-void SerialSpinner::handleMessage<serial::Status>(
-    const serial::Status& status) {
-    // TODO
+void SerialSpinner::handleMessage<serial::msg::Status>(
+    const serial::msg::Status& status) {
+    serial::GameStatus msg;
+
+    msg.stamp = ros::Time::now();
+    msg.robot_type = status.robot_type;
+
+    msg.red_std_hp = status.red_std_hp;
+    msg.red_hro_hp = status.red_hro_hp;
+    msg.red_sty_hp = status.red_sty_hp;
+    msg.blu_std_hp = status.blu_std_hp;
+    msg.blu_hro_hp = status.blu_hro_hp;
+    msg.blu_sty_hp = status.blu_sty_hp;
+
+    msg.mode = status.mode;
+
+    pub_status.publish(msg);
 }
 
 template <>
-void SerialSpinner::handleMessage<serial::Gamestage>(
-    const serial::Gamestage& gamestage) {
-    // TODO
+void SerialSpinner::handleMessage<serial::msg::Gamestage>(
+    const serial::msg::Gamestage& gamestage) {
+    serial::GameStage msg;
+
+    msg.stamp = ros::Time::now();
+    msg.gamestage = gamestage.gamestage;
+
+    pub_stage.publish(msg);
 }
 
 template <>
-void SerialSpinner::handleMessage<serial::TurretFeedback>(
-    const serial::TurretFeedback& turret_feedback) {
-    // TODO
+void SerialSpinner::handleMessage<serial::msg::TurretFeedback>(
+    const serial::msg::TurretFeedback& turret_feedback) {
+    serial::TurretFeedback msg;
+
+    msg.stamp = ros::Time::now();
+
+    msg.pitch = utils::fromAngularSpeed(turret_feedback.pitch);
+    msg.yaw = utils::fromAngularSpeed(turret_feedback.yaw);
+
+    pub_turret.publish(msg);
 }
 
 template <>
-void SerialSpinner::handleMessage<serial::PositionFeedback>(
-    const serial::PositionFeedback& position_feedback) {
-    // TODO
+void SerialSpinner::handleMessage<serial::msg::PositionFeedback>(
+    const serial::msg::PositionFeedback& position_feedback) {
+    serial::PositionFeedback msg;
+
+    msg.stamp = ros::Time::now();
+
+    msg.imu_ax = position_feedback.imu_ax;
+    msg.imu_ay = position_feedback.imu_ay;
+    msg.imu_az = position_feedback.imu_az;
+    msg.imu_rx = position_feedback.imu_rx;
+    msg.imu_ry = position_feedback.imu_ry;
+    msg.imu_rz = position_feedback.imu_rz;
+    msg.enc_1 = position_feedback.enc_1;
+    msg.enc_2 = position_feedback.enc_2;
+    msg.enc_3 = position_feedback.enc_3;
+    msg.enc_4 = position_feedback.enc_4;
+    msg.delta_t = position_feedback.delta_t;
+
+    pub_position.publish(msg);
 }
 
 void SerialSpinner::handleSerial() {
     int bytes;
 
-    serial::IncomingMessage message{serial::Header<serial::None>()};
+    serial::msg::IncomingMessage message{serial::Header<serial::None>()};
 
     // Attempt to read a command
     bytes = read(fd, &message, sizeof(serial::Header<serial::None>));
@@ -193,17 +262,19 @@ void SerialSpinner::handleSerial() {
     }
 
     // Could use a std::visit-type method here, but this will do for now.
+
+    using namespace serial::msg;
     switch (message.header.cmd_id) {
-    case serial::Status::ID:
+    case Status::ID:
         handleMessage(message.status);
         break;
-    case serial::Gamestage::ID:
+    case Gamestage::ID:
         handleMessage(message.gamestage);
         break;
-    case serial::TurretFeedback::ID:
+    case TurretFeedback::ID:
         handleMessage(message.turret_feedback);
         break;
-    case serial::PositionFeedback::ID:
+    case PositionFeedback::ID:
         handleMessage(message.position_feedback);
         break;
     default:
@@ -212,8 +283,11 @@ void SerialSpinner::handleSerial() {
 }
 
 void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
-    serial::OutgoingMessage order{};
-    serial::TargetOrder& msg = order.target_order;
+    using namespace serial::msg;
+    OutgoingMessage order{};
+
+    TargetOrder& msg = order.target_order;
+
     msg.pitch = target->theta;
     msg.yaw = target->phi;
 
@@ -222,22 +296,15 @@ void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
     sendMessage(order);
 }
 
-constexpr int16_t toMillimeter(float m_s) {
-    // m/s to mm/s
-    return static_cast<uint16_t>(m_s * 1e3);
-}
-
-constexpr int16_t toAngularSpeed(float omega) {
-    // Rad/s to millirad/s
-    return static_cast<uint16_t>(omega * 1e3);
-}
-
 void SerialSpinner::callbackMovement(const serial::MovementConstPtr& move) {
-    serial::OutgoingMessage order{};
-    serial::Move& msg = order.move_order;
-    msg.v_x = toMillimeter(move->v_x);
-    msg.v_y = toMillimeter(move->v_y);
-    msg.omega = toAngularSpeed(move->omega);
+    using namespace serial::msg;
+    OutgoingMessage order{};
+
+    Move& msg = order.move_order;
+
+    msg.v_x = utils::toMillimeter(move->v_x);
+    msg.v_y = utils::toMillimeter(move->v_y);
+    msg.omega = utils::toAngularSpeed(move->omega);
 
     std::cout << "Movement : " << msg.v_x << ' ' << msg.v_y << ' ' << msg.omega
               << '\n';
@@ -245,7 +312,7 @@ void SerialSpinner::callbackMovement(const serial::MovementConstPtr& move) {
     sendMessage(order);
 }
 
-void SerialSpinner::sendMessage(const serial::OutgoingMessage& message) {
+void SerialSpinner::sendMessage(const serial::msg::OutgoingMessage& message) {
     auto msg_size = message.header.size();
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&message);
     for (auto i = 0u; i < msg_size; ++i) {

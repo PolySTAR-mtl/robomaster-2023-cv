@@ -33,6 +33,8 @@ struct None : Header<None> {
 
 // Payloads
 
+namespace msg {
+
 struct Status : Header<Status> {
     static constexpr uint8_t ID = 0x01;
 
@@ -108,5 +110,7 @@ union OutgoingMessage {
     Move move_order;
     Shoot shoot_order;
 };
+
+} // namespace msg
 
 } // namespace serial

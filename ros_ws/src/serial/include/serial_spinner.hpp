@@ -63,10 +63,10 @@ class SerialSpinner {
 
     template <typename T> void handleMessage(const T& message);
 
-    void sendMessage(const serial::OutgoingMessage& message);
+    void sendMessage(const serial::msg::OutgoingMessage& message);
 
     ros::NodeHandle& nh;
-    ros::Publisher pub_hp, pub_switch;
+    ros::Publisher pub_status, pub_stage, pub_turret, pub_position;
     ros::Subscriber sub_target, sub_movement;
 
     int fd = -1;

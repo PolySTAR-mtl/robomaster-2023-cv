@@ -21,6 +21,10 @@ add_message_files(
   SwitchOrder.msg
   Target.msg
   Movement.msg
+  GameStatus.msg
+  GameStage.msg
+  TurretFeedback.msg
+  PositionFeedback.msg
 )
 
 generate_messages()
