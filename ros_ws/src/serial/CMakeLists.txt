@@ -75,3 +75,6 @@ add_dependencies(serial_interface ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 catkin_add_gtest(serialize test/serialize.cpp)
 target_link_libraries(serialize serial_spinner ${catkin_LIBRARIES})
+
+catkin_add_gtest(deserialize test/deserialize.cpp)
+target_link_libraries(deserialize serial_spinner ${catkin_LIBRARIES})

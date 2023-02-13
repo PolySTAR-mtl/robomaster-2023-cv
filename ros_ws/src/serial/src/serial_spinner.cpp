@@ -282,6 +282,34 @@ void SerialSpinner::handleSerial() {
     }
 }
 
+serial::msg::IncomingMessage
+SerialSpinner::deseralizeMessage(const std::vector<uint8_t>& buffer) {
+    serial::msg::IncomingMessage message{serial::Header<serial::None>()};
+
+    if (buffer.size() < sizeof(serial::Header<void>)) {
+        throw std::runtime_error("Incomplete header");
+    }
+
+    memcpy(&message, buffer.data(), sizeof(serial::Header<serial::None>));
+
+    if (message.header.start_byte != serial::START_FRAME) {
+        throw std::runtime_error("Start frame not recognized");
+    }
+
+    uint8_t* payload =
+        reinterpret_cast<uint8_t*>(&message) + sizeof(serial::Header<void>);
+
+    if (message.header.data_len >
+        buffer.size() - sizeof(serial::Header<void>)) {
+        throw std::runtime_error("Incomplete buffer");
+    }
+
+    memcpy(payload, buffer.data() + sizeof(serial::None),
+           message.header.data_len);
+
+    return message;
+}
+
 void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
     using namespace serial::msg;
     OutgoingMessage order{.target_order = {}};

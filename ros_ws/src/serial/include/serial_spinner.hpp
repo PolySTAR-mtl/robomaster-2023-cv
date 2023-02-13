@@ -48,11 +48,19 @@ class SerialSpinner {
      */
     void spin();
 
+    // ----- Testing methods ----- //
+
     /** \fn serializeMessage
      * \brief Serialize a message to a buffer
      */
     static std::vector<uint8_t>
     serializeMessage(const serial::msg::OutgoingMessage& message);
+
+    /** \fn deserializeMessage
+     * \brief Deserialize a message from a buffer
+     */
+    static serial::msg::IncomingMessage
+    deseralizeMessage(const std::vector<uint8_t>& buffer);
 
   private:
     /** \fn initSerial
