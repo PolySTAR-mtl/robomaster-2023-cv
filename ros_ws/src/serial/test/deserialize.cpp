@@ -53,6 +53,22 @@ TEST(Deserialize, Status) {
     EXPECT_EQ(msg2.status.mode, 0xFF);
 }
 
+TEST(Deserialize, BadHeader) {
+    auto bad_start_byte = []() {
+        std::vector<uint8_t> buffer = {0x00, 0xFF, 0x00};
+        auto msg = SerialSpinner::deseralizeMessage(buffer);
+    };
+
+    EXPECT_THROW(bad_start_byte(), std::runtime_error);
+
+    auto bad_length = []() {
+        std::vector<uint8_t> buffer = {0xFC, 0x00F, 0x01};
+        auto msg = SerialSpinner::deseralizeMessage(buffer);
+    };
+
+    EXPECT_THROW(bad_length(), std::runtime_error);
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     ros::init(argc, argv, "serial_tester");
