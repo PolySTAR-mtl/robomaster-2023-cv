@@ -19,7 +19,7 @@ TEST(Deserialize, EmptyHeader) {
 
     auto msg = SerialSpinner::deseralizeMessage(buffer);
     EXPECT_EQ(msg.header.start_byte, serial::START_FRAME);
-    EXPECT_EQ(msg.header.cmd_id, buffer[2]);
+    EXPECT_EQ(msg.header.cmd_id, buffer[1]);
     EXPECT_EQ(msg.header.data_len, 0);
 }
 
