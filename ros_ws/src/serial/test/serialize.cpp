@@ -95,6 +95,11 @@ TEST(Serialize, Shoot) {
     check_array(obtained, expected);
 }
 
+TEST(Serialize, HeaderSize) {
+    EXPECT_EQ(serial::HEADER_SIZE, sizeof(serial::None));
+    EXPECT_EQ(serial::HEADER_SIZE, sizeof(serial::Header<void>));
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     ros::init(argc, argv, "serial_tester");
