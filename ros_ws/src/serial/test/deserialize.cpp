@@ -23,7 +23,35 @@ TEST(Deserialize, EmptyHeader) {
     EXPECT_EQ(msg.header.data_len, 0);
 }
 
-TEST(Deserialize, Status) {}
+TEST(Deserialize, Status) {
+    std::vector<uint8_t> buffer = {0xFC, 0x01, 14, 0, 0, 0, 0, 0, 0,
+                                   0,    0,    0,  0, 0, 0, 0, 0};
+    auto msg = SerialSpinner::deseralizeMessage(buffer);
+
+    EXPECT_EQ(msg.status.cmd_id, serial::msg::Status::ID);
+    EXPECT_EQ(msg.status.robot_type, 0u);
+    EXPECT_EQ(msg.status.red_std_hp, 0u);
+    EXPECT_EQ(msg.status.red_hro_hp, 0u);
+    EXPECT_EQ(msg.status.red_sty_hp, 0u);
+    EXPECT_EQ(msg.status.blu_std_hp, 0u);
+    EXPECT_EQ(msg.status.blu_hro_hp, 0u);
+    EXPECT_EQ(msg.status.blu_sty_hp, 0u);
+    EXPECT_EQ(msg.status.mode, 0u);
+
+    std::vector<uint8_t> buffer2 = {0xFC, 0x01, 14, 0xFF, 0, 0, 0, 0,   0,
+                                    0,    0,    0,  0,    0, 0, 0, 0xFF};
+    auto msg2 = SerialSpinner::deseralizeMessage(buffer2);
+
+    EXPECT_EQ(msg2.status.cmd_id, serial::msg::Status::ID);
+    EXPECT_EQ(msg2.status.robot_type, 0xFF);
+    EXPECT_EQ(msg2.status.red_std_hp, 0u);
+    EXPECT_EQ(msg2.status.red_hro_hp, 0u);
+    EXPECT_EQ(msg2.status.red_sty_hp, 0u);
+    EXPECT_EQ(msg2.status.blu_std_hp, 0u);
+    EXPECT_EQ(msg2.status.blu_hro_hp, 0u);
+    EXPECT_EQ(msg2.status.blu_sty_hp, 0u);
+    EXPECT_EQ(msg2.status.mode, 0xFF);
+}
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
