@@ -23,8 +23,12 @@ sets = ['robomaster_Central China Regional Competition', 'robomaster_Final Tourn
 
 # List of classes
 
-classes = ["red_armor", "blue_armor", "grey_armor", "base", "watcher", "car"]
+classes = ["red_armor", "blue_armor", "grey_armor", "base", "car"]
 
+def isInside(smallBox, bigBox):
+    if (smallBox.xmin < bigBox.xmin and smallBox.ymin < bigBox.ymin and smallBox.xmax < bigBox.xmax and smallBox.ymax < bigBox.ymax):
+        return True
+    return False
 
 def convert(size, box):
     dw = 1./(size[0])
@@ -65,6 +69,20 @@ def convert_annotation(set_name, image_id):
 
         cls = obj.find('name').text
         cls_color = ""
+        if cls == "car":
+            for obj1 in root.iter('object'):
+                if obj1.find('name').text == "armor":
+                    b1 = (float(obj.find('xmin').text), float(obj.find('xmax').text), float(
+                    obj.find('ymin').text), float(obj.find('ymax').text))
+                    b2 = (float(obj1.find('xmin').text), float(obj1.find('xmax').text), float(
+                    obj1.find('ymin').text), float(obj1.find('ymax').text))
+                    if isInside(b2 ,b1):
+                        cls_id = obj1.find("armor_class").text
+                        # TODO: Map armor_class to cls_id (3, 4, 5 -> 4 and 1 -> 5)
+                        # TODO: Map name to cls (if 3, 4, 5 then car becomes std. If 1 then car becomes hro)
+                        break
+
+
 
         if obj.find('armor_color') is not None:
             cls_color = obj.find('armor_color').text + "_"
@@ -83,6 +101,8 @@ def convert_annotation(set_name, image_id):
                        " ".join([str(a) for a in bb]) + '\n')
 
     out_file.close()
+    
+
 
     return True
 
