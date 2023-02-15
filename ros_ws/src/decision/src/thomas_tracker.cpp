@@ -2,7 +2,7 @@
  * \brief Simple targeting node
  *
  * \author Sébastien Darche <sebastien.darche@polymtl.ca>
- * \modifications Thomas Petrie <thomas.petrie@polymtl.ca> 
+ * \author Thomas Petrie <thomas.petrie@polymtl.ca>
  */
 
 // Std includes
@@ -17,16 +17,20 @@
 #include "tracking/Tracklets.h"
 
 struct BoundingBox {
-    float upper_edge;
+    float upper_edge; // const
     float lower_edge;
     float left_edge;
     float right_edge;
-
+    float x;
+    float y;
     float score = 0.f;
 
     int clss;
 
-    BoundingBox(tracking::Tracklet& bbox) {
+    BoundingBox(tracking::Tracklet& bbox)
+        : x(bbox.x), y(bbox.y) { // initialiser les valeurs
+        y = bbox.y;
+        x = bbox.x;
         upper_edge = bbox.y + bbox.h / 2.f;
         lower_edge = bbox.y - bbox.h / 2.f;
         left_edge = bbox.x - bbox.w / 2.f;
@@ -35,13 +39,12 @@ struct BoundingBox {
     }
 
     bool contains(BoundingBox& bebe) {
-        return (this->upper_edge > bebe.upper_edge && this->lower_edge < bebe.lower_edge&& this->left_edge  < bebe.left_edge&& this->right_edge > bebe.right_edge);
+        return (this->upper_edge > bebe.y && this->lower_edge < bebe.y &&
+                this->left_edge < bebe.x && this->right_edge > bebe.x);
     } // à updater avec sébastien
 };
 
-
 class SimpleTracker {
-
 
   public:
     SimpleTracker(ros::NodeHandle& n, int _enemy_color)
@@ -54,10 +57,10 @@ class SimpleTracker {
                   << (enemy_color == 0 ? "red" : "blue") << "\n";
     }
 
-
     void callbackTracklets(const tracking::TrackletsConstPtr& trks) {
         auto distance = [](auto d1, auto d2) {
-            return std::sqrt(std::pow(d1.x - d2.x, 2) + std::pow(d1.y - d2.y, 2));
+            return std::sqrt(std::pow(d1.x - d2.x, 2) +
+                             std::pow(d1.y - d2.y, 2));
         };
 
         /*float best_dist = INFINITY;
@@ -72,19 +75,17 @@ class SimpleTracker {
                 best_dist = dist;
             }
             ++i;
-        } 
+        }
 
         if (index != -1) {
             last_trk = trks->tracklets[index];
             pub_target.publish(toTarget(last_trk));
         }code de sébastien*/
 
-        auto boxSize = [](auto bbox) {
-            return bbox.w * bbox.h;
-        };
+        auto boxSize = [](auto bbox) { return bbox.w * bbox.h; };
 
         auto findBoxes = [&](auto bbox) {
-            std::vector <BoundingBox> enemy_boxes;
+            std::vector<BoundingBox> enemy_boxes;
             BoundingBox papa(bbox);
             for (auto trk : trks->tracklets) {
                 BoundingBox bebe(trk);
@@ -94,10 +95,10 @@ class SimpleTracker {
             }
             return enemy_boxes;
         };
-        
+
         auto roboType = [&](auto bbox) {
             bool found = false;
-            if (bbox.clss == 4) //if car (standard) 
+            if (bbox.clss == 4) // if car (standard)
             {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < enemy_boxes.size(); i++) {
@@ -109,7 +110,8 @@ class SimpleTracker {
                     return 400;
                 }
             }
-            if (bbox.clss == 5) //création d'une septième classe (hero) dans detection/data/dji.names si possible 
+            if (bbox.clss == 5) // création d'une septième classe (hero) dans
+                                // detection/data/dji.names si possible
             {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
@@ -121,7 +123,7 @@ class SimpleTracker {
                     return 1000;
                 }
             }
-            if (bbox.clss == 3) //if base 
+            if (bbox.clss == 3) // if base
             {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
@@ -133,7 +135,8 @@ class SimpleTracker {
                     return 200;
                 }
             }
-            if (bbox.clss == 6) //juste robot (donc pour la sentry qu'on ne peut pas classer en ce moment) 
+            if (bbox.clss == 6) // juste robot (donc pour la sentry qu'on ne
+                                // peut pas classer en ce moment)
             {
                 auto enemy_boxes = findBoxes(bbox);
                 for (int i = 0; i < sizeof(enemy_boxes); i++) {
@@ -147,7 +150,7 @@ class SimpleTracker {
             }
             return 0;
         };
-        
+
         float best_score = 0;
         int index = -1;
 
@@ -170,15 +173,17 @@ class SimpleTracker {
             last_trk = trks->tracklets[index];
             pub_target.publish(toTarget(last_trk));
         }
-        //ca compilera pas mais c'est l'idée en général
-        //On attribue on score selon le type du robot (hero > std), la distance du canon (proche > loin) et la taille de la bbox (car ++taille bbox = ++proche robot) 
+        // ca compilera pas mais c'est l'idée en général
+        // On attribue on score selon le type du robot (hero > std), la distance
+        // du canon (proche > loin) et la taille de la bbox (car ++taille bbox =
+        // ++proche robot)
     };
 
     serial::Target toTarget(tracking::Tracklet& trk) {
         serial::Target target;
 
         std::cout << "Det : " << trk.x << " ( " << trk.w << " ) " << trk.y
-            << " ( " << trk.h << " )\n";
+                  << " ( " << trk.h << " )\n";
 
         auto x_c = trk.x + trk.w / 2 - im_w / 2;
         auto y_c = trk.y + trk.h / 2 - im_h / 2;
@@ -197,7 +202,7 @@ class SimpleTracker {
         return target;
     }
 
-private:
+  private:
     ros::NodeHandle& nh;
     ros::Subscriber sub_tracklets;
     ros::Publisher pub_target;
