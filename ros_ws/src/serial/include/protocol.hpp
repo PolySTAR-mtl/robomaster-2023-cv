@@ -78,7 +78,7 @@ struct PositionFeedback : Header<PositionFeedback> {
     int16_t enc_2;
     int16_t enc_3;
     int16_t enc_4;
-    int16_t delta_t;
+    uint16_t delta_t;
 } __attribute__((packed));
 
 struct TargetOrder : Header<TargetOrder> {
