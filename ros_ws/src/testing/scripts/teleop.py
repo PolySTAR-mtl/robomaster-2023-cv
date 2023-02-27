@@ -24,10 +24,15 @@ settings = termios.tcgetattr(sys.stdin)
 inc = 0.1  # Increment at each keystroke
 
 # Stored as x, y, rot
-mappings = {'w': np.array([inc, 0, 0]), 's': np.array(
+mappings_wasd = {'w': np.array([inc, 0, 0]), 's': np.array(
     [-inc, 0, 0]), 'd': np.array([0, inc, 0]), 'a':  np.array([0, -inc, 0]),
-    'e': np.array([0, 0, inc]), 'q':  np.array([0, 0, inc])}
+    'e': np.array([0, 0, inc]), 'q':  np.array([0, 0, -inc])}
 
+mappings_zqsd = {'z': np.array([inc, 0, 0]), 's': np.array(
+    [-inc, 0, 0]), 'd': np.array([0, inc, 0]), 'q':  np.array([0, -inc, 0]),
+    'e': np.array([0, 0, inc]), 'a':  np.array([0, 0, -inc])}
+
+mappings = mappings_zqsd
 
 def get_key():
     tty.setraw(sys.stdin.fileno())
@@ -43,7 +48,7 @@ def get_key():
 
 def main():
     rospy.init_node("teleop")
-    pub = rospy.Publisher('movement', Movement, queue_size=1)
+    pub = rospy.Publisher('/serial/movement', Movement, queue_size=1)
 
     order = np.array([0., 0., 0.])
 
