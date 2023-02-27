@@ -33,6 +33,8 @@ struct None : Header<None> {
     static constexpr uint8_t ID = 0xFF;
 } __attribute__((packed));
 
+constexpr std::size_t HEADER_SIZE = sizeof(None);
+
 // Payloads
 
 namespace msg {

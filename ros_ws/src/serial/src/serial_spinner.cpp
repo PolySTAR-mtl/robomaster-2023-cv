@@ -239,11 +239,11 @@ void SerialSpinner::handleMessage<serial::msg::PositionFeedback>(
 void SerialSpinner::handleSerial() {
     int bytes;
 
-    serial::msg::IncomingMessage message{serial::Header<serial::None>()};
+    serial::msg::IncomingMessage message{serial::None()};
 
     // Attempt to read a command
-    bytes = read(fd, &message, sizeof(serial::Header<serial::None>));
-    if (bytes < sizeof(serial::Header<void>)) {
+    bytes = read(fd, &message, serial::HEADER_SIZE);
+    if (bytes < serial::HEADER_SIZE) {
         // No incoming command, return immediatly
         return;
     }
@@ -254,7 +254,7 @@ void SerialSpinner::handleSerial() {
     }
 
     uint8_t* payload =
-        reinterpret_cast<uint8_t*>(&message) + sizeof(serial::Header<void>);
+        reinterpret_cast<uint8_t*>(&message) + serial::HEADER_SIZE;
     bytes = read(fd, payload, message.header.data_len);
     if (bytes < message.header.data_len) {
         ROS_ERROR("Incomplete read on input payload");
@@ -286,25 +286,24 @@ serial::msg::IncomingMessage
 SerialSpinner::deseralizeMessage(const std::vector<uint8_t>& buffer) {
     serial::msg::IncomingMessage message{serial::Header<serial::None>()};
 
-    if (buffer.size() < sizeof(serial::Header<void>)) {
+    if (buffer.size() < serial::HEADER_SIZE) {
         throw std::runtime_error("Incomplete header");
     }
 
-    memcpy(&message, buffer.data(), sizeof(serial::Header<serial::None>));
+    memcpy(&message, buffer.data(), serial::HEADER_SIZE);
 
     if (message.header.start_byte != serial::START_FRAME) {
         throw std::runtime_error("Start frame not recognized");
     }
 
     uint8_t* payload =
-        reinterpret_cast<uint8_t*>(&message) + sizeof(serial::Header<void>);
+        reinterpret_cast<uint8_t*>(&message) + serial::HEADER_SIZE;
 
-    if (message.header.data_len >
-        buffer.size() - sizeof(serial::Header<void>)) {
+    if (message.header.data_len > buffer.size() - serial::HEADER_SIZE) {
         throw std::runtime_error("Incomplete buffer");
     }
 
-    memcpy(payload, buffer.data() + sizeof(serial::None),
+    memcpy(payload, buffer.data() + serial::HEADER_SIZE,
            message.header.data_len);
 
     return message;
