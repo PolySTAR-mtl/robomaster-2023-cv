@@ -39,12 +39,12 @@ constexpr float fromAngularSpeed(int16_t omega) {
 
 constexpr int16_t toMillimeter(float m_s) {
     // m/s to mm/s
-    return static_cast<uint16_t>(m_s * 1e3);
+    return static_cast<int16_t>(m_s * 1e3);
 }
 
 constexpr int16_t toAngularSpeed(float omega) {
     // Rad/s to millirad/s
-    return static_cast<uint16_t>(omega * 1e3);
+    return static_cast<int16_t>(omega * 1e3);
 }
 } // namespace utils
 
