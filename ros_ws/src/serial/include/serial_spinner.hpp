@@ -19,6 +19,7 @@
 #include <ros/ros.h>
 
 #include "serial/Movement.h"
+#include "serial/Shoot.h"
 #include "serial/Target.h"
 
 class SerialSpinner {
@@ -42,6 +43,11 @@ class SerialSpinner {
      * \brief Callback for new target coordinates
      */
     void callbackMovement(const serial::MovementConstPtr&);
+
+    /** \fn callbackShoot
+     * \brief Callback for shoot orders
+     */
+    void callbackShoot(const serial::ShootConstPtr&);
 
     /** \fn spin
      * \brief Spins, waiting for requests and listens to the serial port
@@ -87,7 +93,7 @@ class SerialSpinner {
 
     ros::NodeHandle& nh;
     ros::Publisher pub_status, pub_stage, pub_turret, pub_position;
-    ros::Subscriber sub_target, sub_movement;
+    ros::Subscriber sub_target, sub_movement, sub_shoot;
 
     int fd = -1;
     int baud_rate, length, stop_bits;

@@ -16,6 +16,7 @@
 #include "serial/GameStage.h"
 #include "serial/GameStatus.h"
 #include "serial/PositionFeedback.h"
+#include "serial/Shoot.h"
 #include "serial/TurretFeedback.h"
 
 // OS includes
@@ -64,6 +65,7 @@ SerialSpinner::SerialSpinner(ros::NodeHandle& n, const std::string& device,
         nh.subscribe("target", 1, &SerialSpinner::callbackTarget, this);
     sub_movement =
         nh.subscribe("movement", 1, &SerialSpinner::callbackMovement, this);
+    sub_shoot = nh.subscribe("shoot", 1, &SerialSpinner::callbackShoot, this);
 }
 
 SerialSpinner::~SerialSpinner() {
@@ -336,6 +338,14 @@ void SerialSpinner::callbackMovement(const serial::MovementConstPtr& move) {
     std::cout << "Movement : " << msg.v_x << ' ' << msg.v_y << ' ' << msg.omega
               << '\n';
 
+    sendMessage(order);
+}
+
+void SerialSpinner::callbackShoot(const serial::ShootConstPtr&) {
+    using namespace serial::msg;
+    OutgoingMessage order{.shoot_order = {}};
+
+    std::cout << "Shooting\n";
     sendMessage(order);
 }
 

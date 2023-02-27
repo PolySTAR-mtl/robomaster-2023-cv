@@ -25,6 +25,7 @@ add_message_files(
   GameStage.msg
   TurretFeedback.msg
   PositionFeedback.msg
+  Shoot.msg
 )
 
 generate_messages()
