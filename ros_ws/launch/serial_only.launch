@@ -1,6 +1,6 @@
 <launch>
     <!-- Args -->
-    <arg name="workspace" value="$(dirname)"/>
+    <arg name="workspace" value="$(dirname)/.."/>
 
     <remap from="/serial/target" to="/decision/target"/>
     <include file="$(find serial)/launch/serial.launch">

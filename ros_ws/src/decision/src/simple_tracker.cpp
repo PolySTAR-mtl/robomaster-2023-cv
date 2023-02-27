@@ -63,7 +63,8 @@ class SimpleTracker {
 
         std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
 
-        uint16_t theta = std::floor((y_c * alpha_y + M_PI_2) * 1000.f);
+        // Simple approximation .. if we consider x_c & y_c to be low enough
+        int16_t theta = std::floor(y_c * alpha_y * 1000.f);
         int16_t phi = std::floor(x_c * alpha_x * 1000.f);
 
         target.theta = theta;
