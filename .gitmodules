@@ -4,7 +4,7 @@
     ignore = dirty
 [submodule "ros_ws/src/jetson_camera"]
 	path = ros_ws/src/jetson_camera
-	url = git@github.com:sfalexrog/jetson_camera.git
+	url = git@github.com:Sebdar/jetson_camera.git
 [submodule "detection/DeepStream-Yolo"]
 	path = detection/DeepStream-Yolo
 	url = git@github.com:marcoslucianops/DeepStream-Yolo.git
