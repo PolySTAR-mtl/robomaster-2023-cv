@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(serial)
 
 # Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++17)
+set(CMAKE_CXX_STANDARD 17)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
@@ -20,6 +20,12 @@ add_message_files(
   Rune.msg
   SwitchOrder.msg
   Target.msg
+  Movement.msg
+  GameStatus.msg
+  GameStage.msg
+  TurretFeedback.msg
+  PositionFeedback.msg
+  Shoot.msg
 )
 
 generate_messages()
@@ -44,13 +50,15 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_library(serial_spinner src/serial_spinner)
+
 add_executable(serial_interface
   src/serial_interface.cpp
-  src/serial_spinner.cpp
 )
 
 target_link_libraries(serial_interface
   ${catkin_LIBRARIES}
+  serial_spinner
 )
 
 add_dependencies(serial_interface ${${PROJECT_NAME}_EXPORTED_TARGETS})
@@ -65,5 +73,9 @@ add_dependencies(serial_interface ${${PROJECT_NAME}_EXPORTED_TARGETS})
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+
+catkin_add_gtest(serialize test/serialize.cpp)
+target_link_libraries(serialize serial_spinner ${catkin_LIBRARIES})
+
+catkin_add_gtest(deserialize test/deserialize.cpp)
+target_link_libraries(deserialize serial_spinner ${catkin_LIBRARIES})
