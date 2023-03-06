@@ -23,10 +23,10 @@ sets = ['robomaster_Central China Regional Competition', 'robomaster_Final Tourn
 
 # List of classes
 
-classes = ["red_armor", "blue_armor", "grey_armor", "base", "car"]
+classes = ["red_armor", "blue_armor", "grey_armor", "base", "std", "hro"]   #["red_armor", "blue_armor", "grey_armor", "base", "car"]
 
 def isInside(smallBox, bigBox):
-    if (smallBox.xmin < bigBox.xmin and smallBox.ymin < bigBox.ymin and smallBox.xmax < bigBox.xmax and smallBox.ymax < bigBox.ymax):
+    if (smallBox['xmin'] > bigBox['xmin'] and smallBox['ymin'] > bigBox['ymin'] and smallBox['xmax'] < bigBox['xmax'] and smallBox['ymax'] < bigBox['ymax']):
         return True
     return False
 
@@ -68,19 +68,28 @@ def convert_annotation(set_name, image_id):
             difficult = obj.find('difficulty').text
 
         cls = obj.find('name').text
+
         cls_color = ""
         if cls == "car":
             for obj1 in root.iter('object'):
                 if obj1.find('name').text == "armor":
-                    b1 = (float(obj.find('xmin').text), float(obj.find('xmax').text), float(
-                    obj.find('ymin').text), float(obj.find('ymax').text))
-                    b2 = (float(obj1.find('xmin').text), float(obj1.find('xmax').text), float(
-                    obj1.find('ymin').text), float(obj1.find('ymax').text))
+                    b1 = {'xmin': float(obj.find('bndbox').find('xmin').text), 'xmax': float(obj.find('bndbox').find('xmax').text), 'ymin': float(
+                    obj.find('bndbox').find('ymin').text), 'ymax': float(obj.find('bndbox').find('ymax').text)}
+                    b2 = {'xmin': float(obj1.find('bndbox').find('xmin').text), 'xmax': float(obj1.find('bndbox').find('xmax').text), 'ymin': float(
+                    obj1.find('bndbox').find('ymin').text), 'ymax': float(obj1.find('bndbox').find('ymax').text)}
                     if isInside(b2 ,b1):
-                        cls_id = obj1.find("armor_class").text
-                        # TODO: Map armor_class to cls_id (3, 4, 5 -> 4 and 1 -> 5)
-                        # TODO: Map name to cls (if 3, 4, 5 then car becomes std. If 1 then car becomes hro)
+                        cls_id = int(obj1.find("armor_class").text)
+                        if cls_id in [3, 4, 5]:
+                            cls_id = 4
+                            cls = 'std'
+                        elif cls_id == 1:
+                            cls_id = 5
+                            cls = 'hro'
+                        # to handle issue, only if class is not 2 (i.e. an engineer, which we don't have right now)
+                        elif cls_id != 2:
+                            raise Exception("Something went wrong...")
                         break
+
 
 
 
