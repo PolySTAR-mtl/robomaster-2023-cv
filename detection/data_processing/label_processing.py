@@ -61,6 +61,8 @@ def convert_annotation(set_name, image_id):
     size = root.find('size')
     w = int(size.find('width').text)
     h = int(size.find('height').text)
+    # Used to remove engineer robot from data if it's the only "car" in the image
+    isEngiInThere = None
 
     for obj in root.iter('object'):
         difficult = 0
@@ -82,12 +84,16 @@ def convert_annotation(set_name, image_id):
                         if cls_id in [3, 4, 5]:
                             cls_id = 4
                             cls = 'std'
+                            isEngiInThere = False
                         elif cls_id == 1:
                             cls_id = 5
                             cls = 'hro'
-                        # to handle issue, only if class is not 2 (i.e. an engineer, which we don't have right now)
-                        elif cls_id != 2:
+                            isEngiInThere = False
+                        elif cls_id == 2 and isEngiInThere != False:
+                            isEngiInThere = True
+                        else:
                             raise Exception("Something went wrong...")
+                            
                         break
 
 
@@ -111,7 +117,13 @@ def convert_annotation(set_name, image_id):
 
     out_file.close()
     
-
+    # If only engineer in the picture, remove both image and the anotated file
+    # return false at adding the file in the list
+    if isEngiInThere:
+        os.remove(f'../dataset/{set_name}/labels/{image_id}.txt')
+        os.remove(f'../dataset/{set_name}/image_annotation/{image_id}.xml')
+        os.remove(f'../dataset/{set_name}/image/{image_id}.jpg')
+        return False
 
     return True
 

@@ -66,7 +66,7 @@ def liste_robot(image_xml, directory): #Entrée : Un fichier xml
   car_list = []
 
   for i in elements :  # boucle for me retounre la un dictionnaire avec un robot et la ses armors        
-      if i.getElementsByTagName('name')[0].firstChild.data == 'car' or i.getElementsByTagName('name')[0].firstChild.data == 'base' or i.getElementsByTagName('name')[0].firstChild.data == 'watcher':  # me permet de trouver les robots
+      if i.getElementsByTagName('name')[0].firstChild.data == 'car' or i.getElementsByTagName('name')[0].firstChild.data == 'base':  # me permet de trouver les robots
         car_list.append(Robot(i.getElementsByTagName('name')[0].firstChild.data,None,float(i.getElementsByTagName('bndbox')[0].getElementsByTagName('xmin')[0].firstChild.data),float(i.getElementsByTagName('bndbox')[0].getElementsByTagName('ymin')[0].firstChild.data),float(i.getElementsByTagName('bndbox')[0].getElementsByTagName('xmax')[0].firstChild.data),float(i.getElementsByTagName('bndbox')[0].getElementsByTagName('ymax')[0].firstChild.data), []))
         for j in elements :
           if j.getElementsByTagName('name')[0].firstChild.data == 'armor': # me permet de trouver les armors
