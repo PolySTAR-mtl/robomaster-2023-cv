@@ -38,10 +38,10 @@ struct BoundingBox {
         clss = bbox.clss;
     }
 
-    bool contains(BoundingBox& bebe) {
-        return (this->upper_edge > bebe.y && this->lower_edge < bebe.y &&
-                this->left_edge < bebe.x && this->right_edge > bebe.x);
-    } // à updater avec sébastien
+    bool contains(BoundingBox& outer) {
+        return (this->upper_edge > outer.y && this->lower_edge < outer.y &&
+                this->left_edge < outer.x && this->right_edge > outer.x);
+    }
 };
 
 class SimpleTracker {
@@ -88,9 +88,9 @@ class SimpleTracker {
             std::vector<BoundingBox> enemy_boxes;
             BoundingBox papa(bbox);
             for (auto trk : trks->tracklets) {
-                BoundingBox bebe(trk);
-                if (papa.contains(bebe)) {
-                    enemy_boxes.push_back(bebe);
+                BoundingBox outer(trk);
+                if (papa.contains(outer)) {
+                    enemy_boxes.push_back(outer);
                 }
             }
             return enemy_boxes;
