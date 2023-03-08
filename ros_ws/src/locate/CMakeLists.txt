@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  roscpp
   nav_msgs
   sensor_msgs
   serial
@@ -34,6 +35,7 @@ add_executable(locate
   src/locate.cpp
   src/odom.cpp
   src/imu.cpp
+  src/turret.cpp
 )
 
 add_dependencies(locate ${catkin_EXPORTED_TARGETS})
