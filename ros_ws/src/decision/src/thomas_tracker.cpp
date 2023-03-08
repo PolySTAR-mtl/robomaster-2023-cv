@@ -17,26 +17,64 @@
 #include "tracking/Tracklets.h"
 
 struct BoundingBox {
-    float upper_edge; // const
-    float lower_edge;
-    float left_edge;
-    float right_edge;
-    float x;
-    float y;
-    float score = 0.f;
+    const float upper_edge; // const
+    const float lower_edge;
+    const float left_edge;
+    const float right_edge;
+    const float width;
+    const float height;
+    const float x;
+    const float y;
+    const float score = 0.f;
 
     int clss;
 
-    BoundingBox(tracking::Tracklet& bbox)
-        : x(bbox.x), y(bbox.y) { // initialiser les valeurs
-        y = bbox.y;
-        x = bbox.x;
-        upper_edge = bbox.y + bbox.h / 2.f;
-        lower_edge = bbox.y - bbox.h / 2.f;
-        left_edge = bbox.x - bbox.w / 2.f;
-        right_edge = bbox.x + bbox.w / 2.f;
-        clss = bbox.clss;
+    int getSize(){
+        return this->width * this->height; 
     }
+    
+    int roboType(int enemy_color, const tracking::TrackletsConstPtr& trks){
+        switch(this->clss){
+            case 3:
+                return scoreReturn(enemy_color, 200, trks);
+            case 4:
+                return scoreReturn(enemy_color, 400, trks);
+            case 5:
+                return scoreReturn(enemy_color, 1000, trks);
+            case 6:
+                return scoreReturn(enemy_color, 300, trks);
+            default:
+                return 0;
+        }
+    }
+
+    int scoreReturn(int enemy_color, int scoreToReturn, const tracking::TrackletsConstPtr& trks){
+        bool found = false;
+        std::vector<BoundingBox> enemy_boxes = this->findBoxes(trks);
+        for (int i = 0; i < enemy_boxes.size(); i++) {
+            if (enemy_boxes[i].clss = enemy_color) {
+                found = true;
+            }
+        }
+        if (found){
+            return scoreToReturn;
+        }
+        return 0;
+    }
+
+    std::vector<BoundingBox> findBoxes(const tracking::TrackletsConstPtr& trks){
+        std::vector<BoundingBox> enemy_boxes;
+        for (auto trk : trks->tracklets){
+            BoundingBox outer(trk);
+            if (this->contains(outer)){
+                enemy_boxes.push_back(outer);
+            }
+        }
+        return enemy_boxes;
+    }
+
+    BoundingBox(tracking::Tracklet& bbox) : x(bbox.x), y(bbox.y), upper_edge(bbox.y + bbox.h / 2.f), lower_edge(bbox.y - bbox.h / 2.f),\
+        left_edge(bbox.x - bbox.w / 2.f), right_edge(bbox.x + bbox.w / 2.f), clss(bbox.clss), width(bbox.w), height(bbox.h) { }
 
     bool contains(BoundingBox& outer) {
         return (this->upper_edge > outer.y && this->lower_edge < outer.y &&
@@ -59,106 +97,19 @@ class SimpleTracker {
 
     void callbackTracklets(const tracking::TrackletsConstPtr& trks) {
         auto distance = [](auto d1, auto d2) {
-            return std::sqrt(std::pow(d1.x - d2.x, 2) +
-                             std::pow(d1.y - d2.y, 2));
+            return std::sqrt(std::pow(d1.x - d2.x, 2) +std::pow(d1.y - d2.y, 2));
         };
 
-        /*float best_dist = INFINITY;
-        int index = -1;
-
-        int i = 0;
-
-        for (auto trk : trks->tracklets) {
-            auto dist = distance(last_trk, trk);
-            if (dist < best_dist && enemy_color == int(trk.clss)) {
-                index = i;
-                best_dist = dist;
-            }
-            ++i;
-        }
-
-        if (index != -1) {
-            last_trk = trks->tracklets[index];
-            pub_target.publish(toTarget(last_trk));
-        }code de sébastien*/
-
-        auto boxSize = [](auto bbox) { return bbox.w * bbox.h; };
-
-        auto findBoxes = [&](auto bbox) {
-            std::vector<BoundingBox> enemy_boxes;
-            BoundingBox papa(bbox);
-            for (auto trk : trks->tracklets) {
-                BoundingBox outer(trk);
-                if (papa.contains(outer)) {
-                    enemy_boxes.push_back(outer);
-                }
-            }
-            return enemy_boxes;
-        };
-
-        auto roboType = [&](auto bbox) {
-            bool found = false;
-            if (bbox.clss == 4) // if car (standard)
-            {
-                auto enemy_boxes = findBoxes(bbox);
-                for (int i = 0; i < enemy_boxes.size(); i++) {
-                    if (enemy_boxes[i].clss == enemy_color) {
-                        found = true;
-                    }
-                }
-                if (found) {
-                    return 400;
-                }
-            }
-            if (bbox.clss == 5) // création d'une septième classe (hero) dans
-                                // detection/data/dji.names si possible
-            {
-                auto enemy_boxes = findBoxes(bbox);
-                for (int i = 0; i < sizeof(enemy_boxes); i++) {
-                    if (enemy_boxes[i].clss == enemy_color) {
-                        found = true;
-                    }
-                }
-                if (found) {
-                    return 1000;
-                }
-            }
-            if (bbox.clss == 3) // if base
-            {
-                auto enemy_boxes = findBoxes(bbox);
-                for (int i = 0; i < sizeof(enemy_boxes); i++) {
-                    if (enemy_boxes[i].clss == enemy_color) {
-                        found = true;
-                    }
-                }
-                if (found) {
-                    return 200;
-                }
-            }
-            if (bbox.clss == 6) // juste robot (donc pour la sentry qu'on ne
-                                // peut pas classer en ce moment)
-            {
-                auto enemy_boxes = findBoxes(bbox);
-                for (int i = 0; i < sizeof(enemy_boxes); i++) {
-                    if (enemy_boxes[i].clss == enemy_color) {
-                        found = true;
-                    }
-                }
-                if (found) {
-                    return 300;
-                }
-            }
-            return 0;
-        };
 
         float best_score = 0;
         int index = -1;
 
         int i = 0;
         for (auto trk : trks->tracklets) {
+            BoundingBox tracklet (trk);
             auto dist = distance(last_trk, trk);
-            auto size = boxSize(trk);
-            auto type = roboType(trk);
+            auto size = tracklet.getSize();
+            auto type = tracklet.roboType(enemy_color, trks);
 
             trk.score += type;
             trk.score += size / 8;
@@ -173,12 +124,7 @@ class SimpleTracker {
             last_trk = trks->tracklets[index];
             pub_target.publish(toTarget(last_trk));
         }
-        // ca compilera pas mais c'est l'idée en général
-        // On attribue on score selon le type du robot (hero > std), la distance
-        // du canon (proche > loin) et la taille de la bbox (car ++taille bbox =
-        // ++proche robot)
     };
-
     serial::Target toTarget(tracking::Tracklet& trk) {
         serial::Target target;
 
@@ -217,6 +163,7 @@ class SimpleTracker {
     float alpha_y = 0.001;
     float alpha_x = 0.01;
 };
+
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "decision");
