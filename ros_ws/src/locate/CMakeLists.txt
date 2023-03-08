@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   serial
 )
 
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -42,4 +44,5 @@ add_dependencies(locate ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(locate
   ${catkin_LIBRARIES}
+  Eigen3::Eigen
 )
