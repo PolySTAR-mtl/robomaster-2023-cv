@@ -21,4 +21,8 @@ class IMU {
   private:
     ros::NodeHandle& nh;
     ros::Publisher pub_msg;
+
+    uint32_t seq = 0u;
+
+    constexpr static const auto frame_id = "imu";
 };
