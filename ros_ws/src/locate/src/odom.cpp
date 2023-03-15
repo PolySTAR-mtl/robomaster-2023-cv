@@ -6,6 +6,9 @@
 
 #include "odom.hpp"
 
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
+
 void Odom::handlePos(float enc1, float enc2, float enc3, float enc4,
                      double dt) {
     Eigen::Vector4d enc(enc1, enc2, enc3, enc4);
@@ -37,9 +40,16 @@ Eigen::Vector3d Odom::cinematic(Eigen::Vector4d& vel) {
 Eigen::Vector3d Odom::integrate(Eigen::Vector3d& speed, double dt) {
     auto x = last_estimation.pose.pose.position.x + speed[0] * dt;
     auto y = last_estimation.pose.pose.position.y + speed[1] * dt;
-    auto r = 0.; // TODO convert quaternion to euler
 
-    return {x, y, r};
+    auto& last_q = last_estimation.pose.pose.orientation;
+    tf2::Quaternion q(last_q.x, last_q.y, last_q.z, last_q.w);
+    tf2::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+
+    yaw += speed[2] * dt;
+
+    return {x, y, yaw};
 }
 
 void Odom::handleSpeed(float v1, float v2, float v3, float v4) {
