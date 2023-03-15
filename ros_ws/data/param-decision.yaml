@@ -1,1 +1,6 @@
 enemy_color: 1
+weight:
+  base: 200
+  standard: 400
+  hero: 1000
+  sentry: 300
