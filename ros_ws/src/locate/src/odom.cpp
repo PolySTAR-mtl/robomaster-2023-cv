@@ -11,11 +11,12 @@ void Odom::handlePos(float enc1, float enc2, float enc3, float enc4,
     Eigen::Vector4d enc(enc1, enc2, enc3, enc4);
     auto speed = enc - last_enc; // TODO : figure out direction!
 
+    // Figure out speed, but smoothed to account for derivative noise.
     Eigen::Vector4d speed_smooth =
         smooth_factor * speed + (1 - smooth_factor) * last_speed;
 
     auto robot_vel = cinematic(speed_smooth);
-    auto pos = integrate(robot_vel, dt);
+    auto pos = integrate(robot_vel, dt); // Estimate position
 
     last_enc = enc;
     last_speed = speed;
@@ -41,4 +42,6 @@ Eigen::Vector3d Odom::integrate(Eigen::Vector3d& speed, double dt) {
     return {x, y, r};
 }
 
-void Odom::handleSpeed(float v1, float v2, float v3, float v4) {}
+void Odom::handleSpeed(float v1, float v2, float v3, float v4) {
+    // TODO
+}

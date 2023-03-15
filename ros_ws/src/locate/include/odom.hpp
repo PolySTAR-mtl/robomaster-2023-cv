@@ -19,11 +19,25 @@ class Odom {
         pub_speed = nh.advertise<nav_msgs::Odometry>("odom_speed", 1);
     }
 
+    /** \fn handlePos
+     * \brief Handle a position message by derivating speed, applying the
+     * cinematic model and integrating
+     */
     void handlePos(float enc1, float enc2, float enc3, float enc4, double dt);
+
+    /** \fn handleSpeed
+     * \brief Apply the cinematic model
+     */
     void handleSpeed(float v1, float v2, float v3, float v4);
 
+    /** \fn cinematic
+     * \brief 4-wheeled mecanum drive cinematic model
+     */
     Eigen::Vector3d cinematic(Eigen::Vector4d& wheel_speed);
 
+    /** \fn integrate
+     * \brief Integrate the speed to obtain the new position
+     */
     Eigen::Vector3d integrate(Eigen::Vector3d& robot_speed, double dt);
 
   private:
