@@ -1,6 +1,8 @@
 enemy_color: 1
-weight:
+weights:
   base: 200
-  standard: 400
-  hero: 1000
-  sentry: 300
+  std: 400
+  hro: 1000
+  sty: 300
+  size: 0.125
+  dist: -1

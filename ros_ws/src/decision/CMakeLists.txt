@@ -33,12 +33,26 @@ include_directories(
 )
 
 add_executable(simple_tracker
-  src/weighted_tracker.cpp
+  src/simple_tracker.cpp
 )
 
 target_link_libraries(simple_tracker
   ${catkin_LIBRARIES}
 )
+
+add_dependencies(simple_tracker ${catkin_EXPORTED_TARGETS})
+
+# Weighted tracker
+
+add_executable(weighted_tracker
+  src/weighted_tracker.cpp
+)
+
+target_link_libraries(weighted_tracker
+  ${catkin_LIBRARIES}
+)
+
+add_dependencies(weighted_tracker ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Testing ##

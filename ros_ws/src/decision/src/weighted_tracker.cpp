@@ -28,16 +28,20 @@ struct BoundingBox {
     const float x;
     const float y;
     const float score = 0.f;
+
+    int clss;
+
+    // Static weights loaded from ROS
     static float weightBase;
     static float weightStandard;
     static float weightHero;
     static float weightSentry;
-
-    int clss;
+    static float weightSize;
+    static float weightDist;
 
     int getSize() { return this->width * this->height; }
 
-    int roboType(int enemy_color, const tracking::TrackletsConstPtr& trks) {
+    float roboType(int enemy_color, const tracking::TrackletsConstPtr& trks) {
         switch (this->clss) {
         case static_cast<int>(RoboType::Base):
             return scoreReturn(enemy_color, weightBase, trks);
@@ -52,18 +56,17 @@ struct BoundingBox {
         }
     }
 
-    int scoreReturn(int enemy_color, int scoreToReturn,
-                    const tracking::TrackletsConstPtr& trks) {
+    float scoreReturn(int enemy_color, float scoreToReturn,
+                      const tracking::TrackletsConstPtr& trks) {
         bool found = false;
         std::vector<BoundingBox> enemy_boxes = this->findBoxes(trks);
-        for (int i = 0; i < enemy_boxes.size(); i++) {
-            if (enemy_boxes[i].clss = enemy_color) {
-                found = true;
+
+        for (const auto& box : enemy_boxes) {
+            if (box.clss == enemy_color) {
+                return scoreToReturn;
             }
         }
-        if (found) {
-            return scoreToReturn;
-        }
+
         return 0;
     }
 
@@ -87,7 +90,7 @@ struct BoundingBox {
 
     bool contains(BoundingBox& inner) {
         return (this->upper_edge > inner.y && this->lower_edge < inner.y &&
-                this->left_edge < inner.x && this->right_edge > inner.x);
+                this->left_edge<inner.x&& this->right_edge> inner.x);
     }
 };
 
@@ -101,10 +104,13 @@ class SimpleTracker {
 
         pub_target = nh.advertise<serial::Target>("target", 1);
 
-        BoundingBox::weightBase = nh.param("weight/base", 200);
-        BoundingBox::weightStandard = nh.param("weight/standard", 400);
-        BoundingBox::weightHero = nh.param("weight/hero", 1000);
-        BoundingBox::weightSentry = nh.param("weight/sentry", 300);
+        // Init weights
+        BoundingBox::weightBase = nh.param("weights/base", 200.f);
+        BoundingBox::weightStandard = nh.param("weights/std", 400.f);
+        BoundingBox::weightHero = nh.param("weights/hro", 1000.f);
+        BoundingBox::weightSentry = nh.param("weights/sty", 300.f);
+        BoundingBox::weightSize = nh.param("weights/size", 0.125);
+        BoundingBox::weightDist = nh.param("weights/dist", -1.f);
 
         std::cout << "Enemy color set to be: "
                   << (enemy_color == 0 ? "red" : "blue") << "\n";
@@ -122,24 +128,29 @@ class SimpleTracker {
         int i = 0;
         for (auto trk : trks->tracklets) {
             BoundingBox tracklet(trk);
+
             auto dist = distance(last_trk, trk);
-            auto size = tracklet.getSize();
+            float size = tracklet.getSize();
             auto type = tracklet.roboType(enemy_color, trks);
 
-            trk.score += type;
-            trk.score += size / 8;
-            trk.score = trk.score - dist;
-            if (trk.score > best_score && enemy_color == int(trk.clss)) {
+            auto score = type;
+            score += size * BoundingBox::weightSize;
+            score += dist * BoundingBox::weightDist;
+
+            if (score > best_score && enemy_color == int(trk.clss)) {
                 index = i;
-                best_score = trk.score;
+                best_score = score;
             }
+
             ++i;
         }
+
         if (index != -1) {
             last_trk = trks->tracklets[index];
             pub_target.publish(toTarget(last_trk));
         }
     };
+
     serial::Target toTarget(tracking::Tracklet& trk) {
         serial::Target target;
 
@@ -201,3 +212,5 @@ float BoundingBox::weightBase;
 float BoundingBox::weightStandard;
 float BoundingBox::weightHero;
 float BoundingBox::weightSentry;
+float BoundingBox::weightSize;
+float BoundingBox::weightDist;
