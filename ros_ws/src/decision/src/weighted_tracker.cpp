@@ -16,6 +16,8 @@
 #include "serial/Target.h"
 #include "tracking/Tracklets.h"
 
+enum class RoboType : int { Base = 3, Standard = 4, Hero = 5, Sentry = 6 };
+
 struct BoundingBox {
     const float upper_edge; // const
     const float lower_edge;
@@ -26,29 +28,32 @@ struct BoundingBox {
     const float x;
     const float y;
     const float score = 0.f;
+    static float weightBase;
+    static float weightStandard;
+    static float weightHero;
+    static float weightSentry;
 
     int clss;
 
-    int getSize(){
-        return this->width * this->height; 
-    }
-    
-    int roboType(int enemy_color, const tracking::TrackletsConstPtr& trks){
-        switch(this->clss){
-            case 3:
-                return scoreReturn(enemy_color, 200, trks);
-            case 4:
-                return scoreReturn(enemy_color, 400, trks);
-            case 5:
-                return scoreReturn(enemy_color, 1000, trks);
-            case 6:
-                return scoreReturn(enemy_color, 300, trks);
-            default:
-                return 0;
+    int getSize() { return this->width * this->height; }
+
+    int roboType(int enemy_color, const tracking::TrackletsConstPtr& trks) {
+        switch (this->clss) {
+        case static_cast<int>(RoboType::Base):
+            return scoreReturn(enemy_color, weightBase, trks);
+        case static_cast<int>(RoboType::Standard):
+            return scoreReturn(enemy_color, weightStandard, trks);
+        case static_cast<int>(RoboType::Hero):
+            return scoreReturn(enemy_color, weightHero, trks);
+        case static_cast<int>(RoboType::Sentry):
+            return scoreReturn(enemy_color, weightSentry, trks);
+        default:
+            return 0;
         }
     }
 
-    int scoreReturn(int enemy_color, int scoreToReturn, const tracking::TrackletsConstPtr& trks){
+    int scoreReturn(int enemy_color, int scoreToReturn,
+                    const tracking::TrackletsConstPtr& trks) {
         bool found = false;
         std::vector<BoundingBox> enemy_boxes = this->findBoxes(trks);
         for (int i = 0; i < enemy_boxes.size(); i++) {
@@ -56,25 +61,29 @@ struct BoundingBox {
                 found = true;
             }
         }
-        if (found){
+        if (found) {
             return scoreToReturn;
         }
         return 0;
     }
 
-    std::vector<BoundingBox> findBoxes(const tracking::TrackletsConstPtr& trks){
+    std::vector<BoundingBox>
+    findBoxes(const tracking::TrackletsConstPtr& trks) {
         std::vector<BoundingBox> enemy_boxes;
-        for (auto trk : trks->tracklets){
+        for (auto trk : trks->tracklets) {
             BoundingBox outer(trk);
-            if (this->contains(outer)){
+            if (this->contains(outer)) {
                 enemy_boxes.push_back(outer);
             }
         }
         return enemy_boxes;
     }
 
-    BoundingBox(tracking::Tracklet& bbox) : x(bbox.x), y(bbox.y), upper_edge(bbox.y + bbox.h / 2.f), lower_edge(bbox.y - bbox.h / 2.f),\
-        left_edge(bbox.x - bbox.w / 2.f), right_edge(bbox.x + bbox.w / 2.f), clss(bbox.clss), width(bbox.w), height(bbox.h) { }
+    BoundingBox(tracking::Tracklet& bbox)
+        : x(bbox.x), y(bbox.y), upper_edge(bbox.y + bbox.h / 2.f),
+          lower_edge(bbox.y - bbox.h / 2.f), left_edge(bbox.x - bbox.w / 2.f),
+          right_edge(bbox.x + bbox.w / 2.f), clss(bbox.clss), width(bbox.w),
+          height(bbox.h) {}
 
     bool contains(BoundingBox& inner) {
         return (this->upper_edge > inner.y && this->lower_edge < inner.y &&
@@ -91,22 +100,28 @@ class SimpleTracker {
                                      &SimpleTracker::callbackTracklets, this);
 
         pub_target = nh.advertise<serial::Target>("target", 1);
+
+        BoundingBox::weightBase = nh.param("weight/base", 200);
+        BoundingBox::weightStandard = nh.param("weight/standard", 400);
+        BoundingBox::weightHero = nh.param("weight/hero", 1000);
+        BoundingBox::weightSentry = nh.param("weight/sentry", 300);
+
         std::cout << "Enemy color set to be: "
                   << (enemy_color == 0 ? "red" : "blue") << "\n";
     }
 
     void callbackTracklets(const tracking::TrackletsConstPtr& trks) {
         auto distance = [](auto d1, auto d2) {
-            return std::sqrt(std::pow(d1.x - d2.x, 2) +std::pow(d1.y - d2.y, 2));
+            return std::sqrt(std::pow(d1.x - d2.x, 2) +
+                             std::pow(d1.y - d2.y, 2));
         };
-
 
         float best_score = 0;
         int index = -1;
 
         int i = 0;
         for (auto trk : trks->tracklets) {
-            BoundingBox tracklet (trk);
+            BoundingBox tracklet(trk);
             auto dist = distance(last_trk, trk);
             auto size = tracklet.getSize();
             auto type = tracklet.roboType(enemy_color, trks);
@@ -164,7 +179,6 @@ class SimpleTracker {
     float alpha_x = 0.01;
 };
 
-
 int main(int argc, char** argv) {
     ros::init(argc, argv, "decision");
     ros::NodeHandle nh("~");
@@ -182,3 +196,8 @@ int main(int argc, char** argv) {
 
     ros::spin();
 }
+
+float BoundingBox::weightBase;
+float BoundingBox::weightStandard;
+float BoundingBox::weightHero;
+float BoundingBox::weightSentry;
