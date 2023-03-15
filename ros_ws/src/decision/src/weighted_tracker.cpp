@@ -76,9 +76,9 @@ struct BoundingBox {
     BoundingBox(tracking::Tracklet& bbox) : x(bbox.x), y(bbox.y), upper_edge(bbox.y + bbox.h / 2.f), lower_edge(bbox.y - bbox.h / 2.f),\
         left_edge(bbox.x - bbox.w / 2.f), right_edge(bbox.x + bbox.w / 2.f), clss(bbox.clss), width(bbox.w), height(bbox.h) { }
 
-    bool contains(BoundingBox& outer) {
-        return (this->upper_edge > outer.y && this->lower_edge < outer.y &&
-                this->left_edge < outer.x && this->right_edge > outer.x);
+    bool contains(BoundingBox& inner) {
+        return (this->upper_edge > inner.y && this->lower_edge < inner.y &&
+                this->left_edge < inner.x && this->right_edge > inner.x);
     }
 };
 
