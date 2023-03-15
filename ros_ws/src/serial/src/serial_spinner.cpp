@@ -13,8 +13,11 @@
 
 // ROS includes
 
-#include "serial/HP.h"
-#include "serial/SwitchOrder.h"
+#include "serial/GameStage.h"
+#include "serial/GameStatus.h"
+#include "serial/PositionFeedback.h"
+#include "serial/Shoot.h"
+#include "serial/TurretFeedback.h"
 
 // OS includes
 
@@ -23,6 +26,29 @@
 #include <termios.h>
 #include <unistd.h>
 
+namespace utils {
+
+constexpr float fromMillimeter(int16_t mm_s) {
+    // mm/s to m/s
+    return static_cast<float>(mm_s) * 1.e-3f;
+}
+
+constexpr float fromAngularSpeed(int16_t omega) {
+    // Millirad/s to rad/s
+    return static_cast<float>(omega) * 1.e-3f;
+}
+
+constexpr int16_t toMillimeter(float m_s) {
+    // m/s to mm/s
+    return static_cast<int16_t>(m_s * 1e3);
+}
+
+constexpr int16_t toAngularSpeed(float omega) {
+    // Rad/s to millirad/s
+    return static_cast<int16_t>(omega * 1e3);
+}
+} // namespace utils
+
 SerialSpinner::SerialSpinner(ros::NodeHandle& n, const std::string& device,
                              int _baud, int _len, int _stop, bool _parity,
                              double _freq)
@@ -30,13 +56,16 @@ SerialSpinner::SerialSpinner(ros::NodeHandle& n, const std::string& device,
       frequency(_freq) {
     initSerial(device);
 
-    pub_hp = nh.advertise<serial::HP>("hp", 1);
-    pub_switch = nh.advertise<serial::SwitchOrder>("switch", 1);
+    pub_status = nh.advertise<serial::GameStatus>("gamestatus", 1);
+    pub_stage = nh.advertise<serial::GameStage>("gamestage", 1);
+    pub_turret = nh.advertise<serial::TurretFeedback>("turret", 1);
+    pub_position = nh.advertise<serial::PositionFeedback>("position", 1);
 
     sub_target =
         nh.subscribe("target", 1, &SerialSpinner::callbackTarget, this);
-
-    sub_rune = nh.subscribe("rune", 1, &SerialSpinner::callbackRune, this);
+    sub_movement =
+        nh.subscribe("movement", 1, &SerialSpinner::callbackMovement, this);
+    sub_shoot = nh.subscribe("shoot", 1, &SerialSpinner::callbackShoot, this);
 }
 
 SerialSpinner::~SerialSpinner() {
@@ -121,7 +150,9 @@ void SerialSpinner::initSerial(const std::string& device) {
     int err = cfsetispeed(&tty, B230400);
     err += cfsetospeed(&tty, B230400);
 
-    if(err != 0) { throw std::runtime_error("Could not set IOspeed"); }
+    if (err != 0) {
+        throw std::runtime_error("Could not set IOspeed");
+    }
 
     // Aaaand .. we're done ! Commit to the OS
     if (tcsetattr(fd, TCSANOW, &tty) != 0) {
@@ -141,132 +172,208 @@ void SerialSpinner::spin() {
     }
 }
 
+template <>
+void SerialSpinner::handleMessage<serial::msg::Status>(
+    const serial::msg::Status& status) {
+    serial::GameStatus msg;
+
+    msg.stamp = ros::Time::now();
+    msg.robot_type = status.robot_type;
+
+    msg.red_std_hp = status.red_std_hp;
+    msg.red_hro_hp = status.red_hro_hp;
+    msg.red_sty_hp = status.red_sty_hp;
+    msg.blu_std_hp = status.blu_std_hp;
+    msg.blu_hro_hp = status.blu_hro_hp;
+    msg.blu_sty_hp = status.blu_sty_hp;
+
+    msg.mode = status.mode;
+
+    pub_status.publish(msg);
+}
+
+template <>
+void SerialSpinner::handleMessage<serial::msg::Gamestage>(
+    const serial::msg::Gamestage& gamestage) {
+    serial::GameStage msg;
+
+    msg.stamp = ros::Time::now();
+    msg.gamestage = gamestage.gamestage;
+
+    pub_stage.publish(msg);
+}
+
+template <>
+void SerialSpinner::handleMessage<serial::msg::TurretFeedback>(
+    const serial::msg::TurretFeedback& turret_feedback) {
+    serial::TurretFeedback msg;
+
+    msg.stamp = ros::Time::now();
+
+    msg.pitch = utils::fromAngularSpeed(turret_feedback.pitch);
+    msg.yaw = utils::fromAngularSpeed(turret_feedback.yaw);
+
+    pub_turret.publish(msg);
+}
+
+template <>
+void SerialSpinner::handleMessage<serial::msg::PositionFeedback>(
+    const serial::msg::PositionFeedback& position_feedback) {
+    serial::PositionFeedback msg;
+
+    msg.stamp = ros::Time::now();
+
+    msg.imu_ax = position_feedback.imu_ax;
+    msg.imu_ay = position_feedback.imu_ay;
+    msg.imu_az = position_feedback.imu_az;
+    msg.imu_rx = position_feedback.imu_rx;
+    msg.imu_ry = position_feedback.imu_ry;
+    msg.imu_rz = position_feedback.imu_rz;
+    msg.enc_1 = position_feedback.enc_1;
+    msg.enc_2 = position_feedback.enc_2;
+    msg.enc_3 = position_feedback.enc_3;
+    msg.enc_4 = position_feedback.enc_4;
+    msg.delta_t = position_feedback.delta_t;
+
+    pub_position.publish(msg);
+}
+
 void SerialSpinner::handleSerial() {
     int bytes;
-    serial::command cmd;
 
-    // ROS messages have to be initialized outside of a switch statement
-    serial::HP hp_msg;
-    serial::SwitchOrder switch_msg;
+    serial::msg::IncomingMessage message{serial::None()};
 
     // Attempt to read a command
-    bytes = read(fd, &cmd, sizeof(cmd));
-    if (bytes < sizeof(cmd)) {
+    bytes = read(fd, &message, serial::HEADER_SIZE);
+    if (bytes < serial::HEADER_SIZE) {
         // No incoming command, return immediatly
         return;
     }
 
-    uint8_t* ptr = reinterpret_cast<uint8_t*>(&cmd);
-    for(auto i = 0u; i < sizeof(cmd); ++i) {
-	    std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
-    }
-
-    std::cout << '\n';
-
-    if (cmd.start_byte != serial::START_FRAME) {
+    if (message.header.start_byte != serial::START_FRAME) {
         ROS_ERROR("Start frame not recognized, dropping command");
         return;
     }
 
-    switch (cmd.cmd_id) {
-    case serial::cmd::SWITCH:
-        serial::target_switch data_sw;
+    uint8_t* payload =
+        reinterpret_cast<uint8_t*>(&message) + serial::HEADER_SIZE;
+    bytes = read(fd, payload, message.header.data_len);
+    if (bytes < message.header.data_len) {
+        ROS_ERROR("Incomplete read on input payload");
+        return;
+    }
 
-        // Check if data_len is coherent
-        if (cmd.data_len != sizeof(data_sw)) {
-            ROS_ERROR("Incoherent data_len / unexpected data length");
-            return;
-        }
+    // Could use a std::visit-type method here, but this will do for now.
 
-        bytes = read(fd, &data_sw, sizeof(data_sw));
-        if (bytes < sizeof(data_sw)) {
-            ROS_ERROR("Incomplete read on target switch order");
-            return;
-        }
-
-	std::cout << static_cast<unsigned int>(data_sw) << '\n';
-
-        // Create ROS message
-        switch (data_sw) {
-        case serial::target_switch::NOTHING:
-            switch_msg.order = serial::SwitchOrder::ORDER_NOTHING;
-            break;
-        case serial::target_switch::NEXT:
-            switch_msg.order = serial::SwitchOrder::ORDER_NEXT;
-            break;
-        case serial::target_switch::RIGHT:
-            switch_msg.order = serial::SwitchOrder::ORDER_RIGHT;
-            break;
-        case serial::target_switch::LEFT:
-            switch_msg.order = serial::SwitchOrder::ORDER_LEFT;
-            break;
-        default:
-            ROS_ERROR("Unsupported switch order");
-            return;
-        }
-
-        // Publish to topic
-        pub_switch.publish(switch_msg);
-
+    using namespace serial::msg;
+    switch (message.header.cmd_id) {
+    case Status::ID:
+        handleMessage(message.status);
         break;
-    case serial::cmd::HP:
-        serial::hp data_hp;
-
-        // Check if data_len is coherent
-        if (cmd.data_len != sizeof(data_hp)) {
-            ROS_ERROR("Incoherent data_len / unexpected data length");
-            return;
-        }
-
-        bytes = read(fd, &data_hp, sizeof(data_hp));
-        if (bytes < sizeof(data_hp)) {
-            ROS_ERROR("Incomplete read on HP transfer");
-            return;
-        }
-
-        // Create ROS message
-        hp_msg.foe_hero = data_hp.foe_hero;
-        hp_msg.foe_standard1 = data_hp.foe_standard1;
-        hp_msg.foe_standard2 = data_hp.foe_standard2;
-        hp_msg.foe_sentry = data_hp.foe_sentry;
-
-        hp_msg.ally_hero = data_hp.ally_hero;
-        hp_msg.ally_standard1 = data_hp.ally_standard1;
-        hp_msg.ally_standard2 = data_hp.ally_standard2;
-        hp_msg.ally_sentry = data_hp.ally_sentry;
-
-        // Publish to topic
-        pub_hp.publish(hp_msg);
-
+    case Gamestage::ID:
+        handleMessage(message.gamestage);
+        break;
+    case TurretFeedback::ID:
+        handleMessage(message.turret_feedback);
+        break;
+    case PositionFeedback::ID:
+        handleMessage(message.position_feedback);
         break;
     default:
-        ROS_ERROR("Unrecognized/unhandled serial command");
-        return;
+        ROS_ERROR("Unknown message type %d", message.header.cmd_id);
     }
 }
 
-void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
-    serial::coords msg;
-    msg.is_located = serial::located::YES;
-    msg.theta = target->theta;
-    msg.phi = target->phi;
-    msg.dist = target->dist;
+serial::msg::IncomingMessage
+SerialSpinner::deseralizeMessage(const std::vector<uint8_t>& buffer) {
+    serial::msg::IncomingMessage message{serial::Header<serial::None>()};
 
-    std::cout << "Target : " << msg.theta << ' ' << msg.phi << ' ' << msg.dist
+    if (buffer.size() < serial::HEADER_SIZE) {
+        throw std::runtime_error("Incomplete header");
+    }
+
+    memcpy(&message, buffer.data(), serial::HEADER_SIZE);
+
+    if (message.header.start_byte != serial::START_FRAME) {
+        throw std::runtime_error("Start frame not recognized");
+    }
+
+    uint8_t* payload =
+        reinterpret_cast<uint8_t*>(&message) + serial::HEADER_SIZE;
+
+    if (message.header.data_len > buffer.size() - serial::HEADER_SIZE) {
+        throw std::runtime_error("Incomplete buffer");
+    }
+
+    memcpy(payload, buffer.data() + serial::HEADER_SIZE,
+           message.header.data_len);
+
+    return message;
+}
+
+void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
+    using namespace serial::msg;
+    OutgoingMessage order{.target_order = {}};
+
+    TargetOrder& msg = order.target_order;
+
+    msg.pitch = target->theta;
+    msg.yaw = target->phi;
+
+    std::cout << "Target   : " << msg.pitch << ' ' << msg.yaw << '\n';
+
+    sendMessage(order);
+}
+
+void SerialSpinner::callbackMovement(const serial::MovementConstPtr& move) {
+    using namespace serial::msg;
+    OutgoingMessage order{.move_order = {}};
+
+    Move& msg = order.move_order;
+
+    msg.v_x = utils::toMillimeter(move->v_x);
+    msg.v_y = utils::toMillimeter(move->v_y);
+    msg.omega = utils::toAngularSpeed(move->omega);
+
+    std::cout << "Movement : " << msg.v_x << ' ' << msg.v_y << ' ' << msg.omega
               << '\n';
 
-    uint8_t* ptr = reinterpret_cast<uint8_t*>(&msg);
-    for(auto i = 0u; i < sizeof(msg); ++i) {
-	    std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
-    }
-    std::cout << std::dec <<'\n';
+    sendMessage(order);
+}
 
-    int bytes = write(fd, &msg, sizeof(msg));
-    if (bytes != sizeof(msg)) {
+void SerialSpinner::callbackShoot(const serial::ShootConstPtr&) {
+    using namespace serial::msg;
+    OutgoingMessage order{.shoot_order = {}};
+
+    std::cout << "Shooting\n";
+    sendMessage(order);
+}
+
+void SerialSpinner::sendMessage(const serial::msg::OutgoingMessage& message) {
+    auto msg_size = message.header.size();
+
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&message);
+
+    int bytes = write(fd, ptr, message.header.size());
+    if (bytes != msg_size) {
         ROS_ERROR("Could not write to serial : %s", strerror(errno));
     }
 }
 
-void SerialSpinner::callbackRune(const serial::RuneConstPtr&) {
-    ROS_DEBUG("Unimplemented callback (SerialSpinner::callBackRune");
+std::vector<uint8_t>
+SerialSpinner::serializeMessage(const serial::msg::OutgoingMessage& message) {
+    auto msg_size = message.header.size();
+
+    std::vector<uint8_t> vec(msg_size, 0u);
+
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&message);
+
+    for (auto i = 0u; i < msg_size; ++i) {
+        vec[i] = ptr[i];
+        std::cout << std::hex << static_cast<unsigned int>(ptr[i]) << ' ';
+    }
+
+    std::cout << std::dec << '\n';
+
+    return vec;
 }

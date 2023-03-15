@@ -1,10 +1,10 @@
 /** \file simple_tracker.cpp
  * \brief Simple targeting node
  *
- * \author Sébastien Darche <sebastien.darche@polymtl.ca>
+ * \author SÃ©bastien Darche <sebastien.darche@polymtl.ca>
  */
 
- // Std includes
+// Std includes
 
 #include <algorithm>
 
@@ -16,21 +16,21 @@
 #include "tracking/Tracklets.h"
 
 class SimpleTracker {
-public:
+  public:
     SimpleTracker(ros::NodeHandle& n, int _enemy_color)
         : nh(n), enemy_color(_enemy_color) {
         sub_tracklets = nh.subscribe("tracklets", 1,
-            &SimpleTracker::callbackTracklets, this);
+                                     &SimpleTracker::callbackTracklets, this);
 
         pub_target = nh.advertise<serial::Target>("target", 1);
         std::cout << "Enemy color set to be: "
-            << (enemy_color == 0 ? "red" : "blue") << "\n";
+                  << (enemy_color == 0 ? "red" : "blue") << "\n";
     }
 
     void callbackTracklets(const tracking::TrackletsConstPtr& trks) {
         auto distance = [](auto d1, auto d2) {
             return std::sqrt(std::pow(d1.x - d2.x, 2) +
-                std::pow(d1.y - d2.y, 2));
+                             std::pow(d1.y - d2.y, 2));
         };
         float best_dist = INFINITY;
         int index = -1;
@@ -56,14 +56,15 @@ public:
         serial::Target target;
 
         std::cout << "Det : " << trk.x << " ( " << trk.w << " ) " << trk.y
-            << " ( " << trk.h << " )\n";
+                  << " ( " << trk.h << " )\n";
 
         auto x_c = trk.x + trk.w / 2 - im_w / 2;
         auto y_c = trk.y + trk.h / 2 - im_h / 2;
 
         std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
 
-        uint16_t theta = std::floor((y_c * alpha_y + M_PI_2) * 1000.f);
+        // Simple approximation .. if we consider x_c & y_c to be low enough
+        int16_t theta = std::floor(y_c * alpha_y * 1000.f);
         int16_t phi = std::floor(x_c * alpha_x * 1000.f);
 
         target.theta = theta;
@@ -75,7 +76,7 @@ public:
         return target;
     }
 
-private:
+  private:
     ros::NodeHandle& nh;
     ros::Subscriber sub_tracklets;
     ros::Publisher pub_target;

@@ -92,6 +92,22 @@ Here, an example of images obtained after using `image_zooming.py`. All images a
 
 Currently, we only consider the following class: `classes = ["red_armor", "blue_armor", "grey_armor", "base", "watcher", "car"]` (see `label_processing.py`), where "car" means robot for dji. If you want to include more classes, just add them in this list. However, any string you add in this list should be in the .xml file provided by dji (in `image_annotation/`). Here, we don't distinguish in between robots type (standard, hero, engineer...). If you want to include them, you should use the armor number and thus modify the scripts.
 
+### Labeling custom images
+
+If you have access to new images (for instance, filmed from the robot point of view), it can be a big plus either to add it in training or to test that your model is behaving correctly, in a more meaningful way than the images given by DJI. The only thing needed is to label them properly. For that, multiple tools for annotation exist, yet there is one that was designed specificially for darknet (so easier configuration after): [https://github.com/AlexeyAB/Yolo_mark](https://github.com/AlexeyAB/Yolo_mark).
+
+The following was tested with the Linux configuration but there is a Windows one if you happen to need it. First, install the tool following the repostiory instruction, that is `cmake .` and `make`. Running the last script is not needed (and can results in some error since it seems the script was edited with DOS and so there is some trailing characters Linux does not recognise).
+
+You can test the tool with the default images by running `./yolo_mark x64/Release/data/img x64/Release/data/train.txt x64/Release/data/obj.names`.
+
+If you want to do it with custom images, you need to remove everything in `x64/Release/data/img` and add your images. Then, you have to modify the `x64/Release/data/train.txt` by putting the list of images you have in it (a simple `ls x64/Release/data/img/* > x64/Release/data/train.txt` can do the job) and you have to modify `x64/Release/data/obj.names` to put instead the names of the class you want to use for labeling. BECAREFUL: it has to be the same as the ones you plan to use after, that is, if you only plan to tag 2 classes but your model has 6, it's better to put the 6 in correct order so the id match (i.e. don't do as the image below, where `car` id is 0 when it should be 5 and `red_armor` id is 1 when it should be 0, IT IS JUST AN EXAMPLE). Once it is done, you can run `./yolo_mark x64/Release/data/img x64/Release/data/train.txt x64/Release/data/obj.names`.
+
+Look at the repository information (at the bottom of the `README.md`) or press `h` in the UI to get the keys list. You can just start labeling the images to obtain something as below:
+
+![image](https://user-images.githubusercontent.com/31957192/203588034-d027e7fb-b72e-4545-9893-c6540729a448.png)
+
+Once you are done, just close the tool and it should have generated for each image you labeled a `.txt` file in the `x64/Release/data/img` repository. Each `.txt` file is at the correct format to be processed by Darknet (i.e. each line contains the id of the class and the relative coordinate of the bounding box).
+
 ### Configuration files
 
 In `data/`, you currently have two configuration files for the data (`dji.names` and `dji.data`), one for the model `yolov3_custom.cfg`. `dji.names` describes your class (so change it if you change the classes!), `dji.data` contains the path to important files for YOLO, such as your train/test files list. The `train_data.txt` and `test_data.txt`  contains the list of the images used in the training and testing. The `backup` directory is where the weights of the model are saved during training.
