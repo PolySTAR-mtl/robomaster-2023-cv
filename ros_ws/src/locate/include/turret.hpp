@@ -8,18 +8,22 @@
 
 #include "ros/ros.h"
 
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
+
 #include "geometry_msgs/QuaternionStamped.h"
 #include "serial/TurretFeedback.h"
 
 class Turret {
   public:
-    Turret(ros::NodeHandle& n) : nh(n) {
-        pub_pos = nh.advertise<geometry_msgs::QuaternionStamped>("turret", 1);
-    }
+    Turret(ros::NodeHandle& n)
+        : nh(n), turret_height(nh.param("/robot/turret/height", 0.5)) {}
 
     void callbackTurret(const serial::TurretFeedbackPtr& turret);
 
   private:
     ros::NodeHandle nh;
-    ros::Publisher pub_pos;
+    tf2_ros::TransformBroadcaster pub_pos;
+
+    float turret_height;
 };

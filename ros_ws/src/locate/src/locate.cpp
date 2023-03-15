@@ -28,12 +28,13 @@ int main(int argc, char** argv) {
     Odom odom{nh};
     Turret turret{nh};
 
-    nh.subscribe<serial::PositionFeedback>(
+    auto sub_pos = nh.subscribe<serial::PositionFeedback>(
         "/serial/position", 1, [&imu, &odom](const auto& pos) -> void {
             handleMessage(pos, imu, odom);
         });
 
-    nh.subscribe("/serial/turret", 1, &Turret::callbackTurret, &turret);
+    auto sub_turret =
+        nh.subscribe("/serial/turret", 1, &Turret::callbackTurret, &turret);
 
     ros::spin();
 

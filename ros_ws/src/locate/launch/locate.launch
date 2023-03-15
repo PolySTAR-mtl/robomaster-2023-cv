@@ -1,0 +1,16 @@
+<launch>
+    <!-- Args -->
+    <arg name="params_path"/>
+    <arg name="robot_model"/>
+
+    <!-- Nodes -->
+    <node name="locate" pkg="locate" type="locate" output="screen">
+    </node>
+
+    <param name="robot_description" textfile="$(arg robot_model)"/>
+
+    <node name="map" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 map odom 10"/>
+    <node name="odom" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 odom base_link 10"/>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+
+</launch>
