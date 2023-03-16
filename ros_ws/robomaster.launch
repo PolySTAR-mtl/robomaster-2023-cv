@@ -2,6 +2,9 @@
     <!-- Args -->
     <arg name="workspace" value="$(dirname)"/>
 
+    <!-- Global parameters -->
+    <rosparam command="load" file="$(arg workspace)/data/models/icra.yaml"/>
+
     <!-- Nodes -->
     <include file="$(find decision)/launch/simple_decision.launch">
         <arg name="params_path" value="$(arg workspace)/data/param-decision.yaml"/>

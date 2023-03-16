@@ -1,0 +1,4 @@
+robot:
+  wheel_radius: 0.080
+  l_x: 0.326
+  l_y: 0.464
