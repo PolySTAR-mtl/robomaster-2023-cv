@@ -14,10 +14,7 @@
 
 class Odom {
   public:
-    Odom(ros::NodeHandle& n) : nh(n) {
-        pub_pos = nh.advertise<nav_msgs::Odometry>("odom", 1);
-        pub_speed = nh.advertise<nav_msgs::Odometry>("odom_speed", 1);
-    }
+    Odom(ros::NodeHandle& n);
 
     /** \fn handlePos
      * \brief Handle a position message by derivating speed, applying the
@@ -50,6 +47,7 @@ class Odom {
     double length_x, length_y;
 
     Eigen::Vector4d last_enc;
-    Eigen::Vector4d last_speed;
-    double smooth_factor = 0.95;
+
+    uint32_t seq_odom = 0u;
+    uint32_t seq_speed = 0u;
 };

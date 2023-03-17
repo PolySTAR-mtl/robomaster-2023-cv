@@ -2,6 +2,11 @@
     <!-- Args -->
     <arg name="ekf_config"/>
     <arg name="robot_model"/>
+    <arg name="robot_dimensions"/>
+
+    <!-- Parameters -->
+    <param name="robot_description" textfile="$(arg robot_model)"/>
+    <rosparam command="load" file="$(arg robot_dimensions)"/>
 
     <!-- Nodes -->
     <node name="locate" pkg="locate" type="locate" output="screen">

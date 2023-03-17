@@ -9,20 +9,49 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 
+boost::array<double, 36> unknown_covariance{-1.};
+
+Odom::Odom(ros::NodeHandle& n) : nh(n) {
+    pub_pos = nh.advertise<nav_msgs::Odometry>("odom", 1);
+    pub_speed = nh.advertise<nav_msgs::Odometry>("odom_speed", 1);
+
+    wheel_radius = nh.param("/robot/wheel_radius", 0.08);
+    length_x = nh.param("/robot/l_x", 1.);
+    length_y = nh.param("/robot/l_y", 1.);
+}
+
 void Odom::handlePos(float enc1, float enc2, float enc3, float enc4,
                      double dt) {
     Eigen::Vector4d enc(enc1, enc2, enc3, enc4);
-    auto speed = enc - last_enc; // TODO : figure out direction!
 
-    // Figure out speed, but smoothed to account for derivative noise.
-    Eigen::Vector4d speed_smooth =
-        smooth_factor * speed + (1 - smooth_factor) * last_speed;
+    auto robot_pose = cinematic(enc);
 
-    auto robot_vel = cinematic(speed_smooth);
-    auto pos = integrate(robot_vel, dt); // Estimate position
+    // Generate Odom message
+    nav_msgs::Odometry odom;
+
+    odom.header.seq = seq_odom++;
+    odom.header.frame_id = "odom";
+    odom.header.stamp = ros::Time::now();
+
+    odom.child_frame_id = "odom";
+
+    // Pose
+    odom.pose.covariance = unknown_covariance;
+    odom.pose.pose.position.x = robot_pose[0];
+    odom.pose.pose.position.y = robot_pose[1];
+    odom.pose.pose.position.z = 0.;
+
+    tf2::Quaternion rot;
+    rot.setRPY(0., 0., robot_pose[2]);
+
+    odom.pose.pose.orientation.w = rot.w();
+    odom.pose.pose.orientation.x = rot.x();
+    odom.pose.pose.orientation.y = rot.y();
+    odom.pose.pose.orientation.z = rot.z();
+
+    pub_pos.publish(odom);
 
     last_enc = enc;
-    last_speed = speed;
 }
 
 Eigen::Vector3d Odom::cinematic(Eigen::Vector4d& vel) {
