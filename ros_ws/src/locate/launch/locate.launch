@@ -4,6 +4,8 @@
     <arg name="robot_model"/>
     <arg name="robot_dimensions"/>
 
+    <remap from="/locate/odom" to="/odom"/>
+
     <!-- Parameters -->
     <param name="robot_description" textfile="$(arg robot_model)"/>
     <rosparam command="load" file="$(arg robot_dimensions)"/>
@@ -14,8 +16,9 @@
 
     <param name="robot_description" textfile="$(arg robot_model)"/>
 
-    <node name="map" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 map odom 10"/>
-    <node name="odom" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 odom base_link 10"/>
+    <node name="map" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 world_frame map 10"/>
+    <node name="dead_reckoning" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 map odom 10"/>
+    <!-- <node name="odom" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 odom base_link 10"/> -->
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
 
     <!-- EKF Localization node (robot_localization) -->

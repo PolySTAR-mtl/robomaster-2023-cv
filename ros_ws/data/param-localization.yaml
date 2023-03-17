@@ -2,9 +2,15 @@
 
 frequency: 100.
 two_d_mode: true
+publish_tf: true
+
+map_frame: map
+odom_frame: odom
+base_link_frame: base_link
+world_frame: odom
 
 # Odometry : absolute encoder
-odom0: "locate/odom"
+odom0: "/locate/odom"
 odom0_config:
   - true  # X
   - true  # Y
@@ -21,10 +27,10 @@ odom0_config:
   - false # \ddot{X}
   - false # \ddot{Y}
   - false # \ddot{Z}
-
+odom0_differential: true
 
 # Odometry : speed
-odom1: "locate/odom_speed"
+odom1: "/locate/odom_speed"
 odom1_config:
   - false # X
   - false # Y
@@ -43,7 +49,7 @@ odom1_config:
   - false # \ddot{Z}
 
 # IMU
-imu0: "locate/imu"
+imu0: "/locate/imu"
 imu0_config:
   - false # X
   - false # Y

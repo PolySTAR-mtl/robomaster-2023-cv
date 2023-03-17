@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import rospy
+import numpy as np
+
 from serial.msg import PositionFeedback
 
 
@@ -16,6 +18,7 @@ def main():
     t = 0.
     while not rospy.is_shutdown():
         msg = PositionFeedback(stamp=rospy.Time.now(),
+                               imu_ax=0., imu_ay=0., imu_az=0.,
                                enc_1=t, enc_2=t, enc_3=t, enc_4=t, delta_t=rate.sleep_dur.to_sec())
 
         t += inc
