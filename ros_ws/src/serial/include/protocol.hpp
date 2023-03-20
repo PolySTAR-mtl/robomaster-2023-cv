@@ -71,14 +71,20 @@ struct PositionFeedback : Header<PositionFeedback> {
     int16_t imu_ax;
     int16_t imu_ay;
     int16_t imu_az;
+    int16_t imu_gx;
+    int16_t imu_gy;
+    int16_t imu_gz;
     int16_t imu_rx;
     int16_t imu_ry;
     int16_t imu_rz;
-    int16_t enc_1;
-    int16_t enc_2;
-    int16_t enc_3;
-    int16_t enc_4;
-    uint16_t delta_t;
+    int64_t enc_1;
+    int64_t enc_2;
+    int64_t enc_3;
+    int64_t enc_4;
+    int16_t v_enc_1;
+    int16_t v_enc_2;
+    int16_t v_enc_3;
+    int16_t v_enc_4;
 } __attribute__((packed));
 
 struct TargetOrder : Header<TargetOrder> {

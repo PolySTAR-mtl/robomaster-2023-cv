@@ -20,7 +20,7 @@ class Odom {
      * \brief Handle a position message by derivating speed, applying the
      * cinematic model and integrating
      */
-    void handlePos(float enc1, float enc2, float enc3, float enc4, double dt);
+    void handlePos(int64_t enc1, int64_t enc2, int64_t enc3, int64_t enc4);
 
     /** \fn handleSpeed
      * \brief Apply the cinematic model
@@ -45,6 +45,7 @@ class Odom {
 
     double wheel_radius;
     double length_x, length_y;
+    int64_t encoder_resolution;
 
     Eigen::Vector4d last_enc;
 

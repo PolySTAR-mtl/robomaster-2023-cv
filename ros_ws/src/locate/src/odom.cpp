@@ -11,6 +11,11 @@
 
 boost::array<double, 36> unknown_covariance;
 
+double toRadiants(int64_t enc, int64_t resolution) {
+    return static_cast<double>(enc) * 2 * M_PI /
+           static_cast<double>(resolution);
+}
+
 Odom::Odom(ros::NodeHandle& n) : nh(n) {
     pub_pos = nh.advertise<nav_msgs::Odometry>("odom", 1);
     pub_speed = nh.advertise<nav_msgs::Odometry>("odom_speed", 1);
@@ -18,13 +23,17 @@ Odom::Odom(ros::NodeHandle& n) : nh(n) {
     wheel_radius = nh.param("/robot/wheel_radius", 0.08);
     length_x = nh.param("/robot/l_x", 1.);
     length_y = nh.param("/robot/l_y", 1.);
+    encoder_resolution = nh.param<int>("/robot/encoder_resolution", 8192u);
 
     unknown_covariance.fill(-1.);
 }
 
-void Odom::handlePos(float enc1, float enc2, float enc3, float enc4,
-                     double dt) {
-    Eigen::Vector4d enc(enc1, enc2, enc3, enc4);
+void Odom::handlePos(int64_t enc1, int64_t enc2, int64_t enc3, int64_t enc4) {
+    auto rad = [this](int64_t enc) {
+        return toRadiants(enc, encoder_resolution);
+    };
+
+    Eigen::Vector4d enc(rad(enc1), rad(enc2), rad(enc3), rad(enc4));
 
     auto robot_pose = cinematic(enc);
 

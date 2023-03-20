@@ -16,8 +16,7 @@ void handleMessage(const serial::PositionFeedbackConstPtr& pos, IMU& imu,
                    Odom& odom) {
     imu.handle(pos->imu_ax, pos->imu_ay, pos->imu_az, pos->imu_rx, pos->imu_ry,
                pos->imu_rz);
-    odom.handlePos(pos->enc_1, pos->enc_2, pos->enc_3, pos->enc_4,
-                   pos->delta_t);
+    odom.handlePos(pos->enc_1, pos->enc_2, pos->enc_3, pos->enc_4);
 }
 
 int main(int argc, char** argv) {

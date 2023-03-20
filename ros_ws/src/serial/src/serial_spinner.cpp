@@ -233,7 +233,10 @@ void SerialSpinner::handleMessage<serial::msg::PositionFeedback>(
     msg.enc_2 = position_feedback.enc_2;
     msg.enc_3 = position_feedback.enc_3;
     msg.enc_4 = position_feedback.enc_4;
-    msg.delta_t = position_feedback.delta_t;
+    msg.v_enc_1 = position_feedback.v_enc_1;
+    msg.v_enc_2 = position_feedback.v_enc_2;
+    msg.v_enc_3 = position_feedback.v_enc_3;
+    msg.v_enc_4 = position_feedback.v_enc_4;
 
     pub_position.publish(msg);
 }
