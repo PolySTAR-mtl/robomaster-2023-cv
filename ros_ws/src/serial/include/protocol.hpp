@@ -77,10 +77,14 @@ struct PositionFeedback : Header<PositionFeedback> {
     int16_t imu_rx;
     int16_t imu_ry;
     int16_t imu_rz;
-    int64_t enc_1;
-    int64_t enc_2;
-    int64_t enc_3;
-    int64_t enc_4;
+    uint16_t enc_1;
+    int16_t enc_1_revolutions;
+    uint16_t enc_2;
+    int16_t enc_2_revolutions;
+    uint16_t enc_3;
+    int16_t enc_3_revolutions;
+    uint16_t enc_4;
+    int16_t enc_4_revolutions;
     int16_t v_enc_1;
     int16_t v_enc_2;
     int16_t v_enc_3;

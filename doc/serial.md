@@ -158,7 +158,7 @@ Contents : Feedback from the sensors
 Units :
 - Linear accel : mm . s^-2, `int16_t`
 - Angular speed : millirad . s^-1, `int16_t`
-- Encoders : N/A, `int64_t`
+- Encoders : N/A, `uint16_t` (wrapped), `int16_t` (revolutions)
 - Encoders (speed) : N/A, `int16_t`
 - \Delta_t : microseconds (10^-6 s) , `uint16_t`
 
@@ -173,10 +173,14 @@ Units :
 | 12      | 2    | IMU R_x     |
 | 14      | 2    | IMU R_y     |
 | 16      | 2    | IMU R_z     |
-| 18      | 8    | Enc. 1      |
-| 26      | 8    | Enc. 2      |
-| 34      | 8    | Enc. 3      |
-| 42      | 8    | Enc. 4      |
+| 18      | 2    | Enc. 1 wrap.|
+| 18      | 2    | Enc. 1 rev. |
+| 26      | 2    | Enc. 2 wrap.|
+| 26      | 2    | Enc. 2 rev. |
+| 34      | 2    | Enc. 3 wrap.|
+| 34      | 2    | Enc. 3 rev. |
+| 42      | 2    | Enc. 4 wrap.|
+| 42      | 2    | Enc. 4 rev. |
 | 50      | 2    | V Enc. 1    |
 | 52      | 2    | V Enc. 2    |
 | 54      | 2    | V Enc. 3    |

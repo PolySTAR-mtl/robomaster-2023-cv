@@ -66,6 +66,8 @@ SerialSpinner::SerialSpinner(ros::NodeHandle& n, const std::string& device,
     sub_movement =
         nh.subscribe("movement", 1, &SerialSpinner::callbackMovement, this);
     sub_shoot = nh.subscribe("shoot", 1, &SerialSpinner::callbackShoot, this);
+
+    encoder_resolution = nh.param<int>("/robot/encoder_resolution", 8192u);
 }
 
 SerialSpinner::~SerialSpinner() {
@@ -221,6 +223,11 @@ void SerialSpinner::handleMessage<serial::msg::PositionFeedback>(
     const serial::msg::PositionFeedback& position_feedback) {
     serial::PositionFeedback msg;
 
+    auto unwrap = [this](uint16_t enc, int16_t revolutions) {
+        return static_cast<int64_t>(enc) +
+               static_cast<int64_t>(revolutions) * encoder_resolution;
+    };
+
     msg.stamp = ros::Time::now();
 
     msg.imu_ax = position_feedback.imu_ax;
@@ -229,10 +236,14 @@ void SerialSpinner::handleMessage<serial::msg::PositionFeedback>(
     msg.imu_rx = position_feedback.imu_rx;
     msg.imu_ry = position_feedback.imu_ry;
     msg.imu_rz = position_feedback.imu_rz;
-    msg.enc_1 = position_feedback.enc_1;
-    msg.enc_2 = position_feedback.enc_2;
-    msg.enc_3 = position_feedback.enc_3;
-    msg.enc_4 = position_feedback.enc_4;
+    msg.enc_1 =
+        unwrap(position_feedback.enc_1, position_feedback.enc_1_revolutions);
+    msg.enc_2 =
+        unwrap(position_feedback.enc_2, position_feedback.enc_2_revolutions);
+    msg.enc_3 =
+        unwrap(position_feedback.enc_3, position_feedback.enc_3_revolutions);
+    msg.enc_4 =
+        unwrap(position_feedback.enc_4, position_feedback.enc_4_revolutions);
     msg.v_enc_1 = position_feedback.v_enc_1;
     msg.v_enc_2 = position_feedback.v_enc_2;
     msg.v_enc_3 = position_feedback.v_enc_3;
