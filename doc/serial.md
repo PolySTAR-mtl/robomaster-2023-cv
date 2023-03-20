@@ -157,8 +157,9 @@ Contents : Feedback from the sensors
 
 Units :
 - Linear accel : mm . s^-2, `int16_t`
-- Angular accel : millirad . s^-2, `int16_t`
-- Encoders : N/A, `int16_t`
+- Angular speed : millirad . s^-1, `int16_t`
+- Encoders : N/A, `int64_t`
+- Encoders (speed) : N/A, `int16_t`
 - \Delta_t : microseconds (10^-6 s) , `uint16_t`
 
 | Offset  | Size | Desc        |
@@ -166,14 +167,20 @@ Units :
 | 0       | 2    | IMU A_x     |
 | 2       | 2    | IMU A_y     |
 | 4       | 2    | IMU A_z     |
-| 6       | 2    | IMU R_x     |
-| 8       | 2    | IMU R_y     |
-| 10      | 2    | IMU R_z     |
-| 12      | 2    | Enc. 1      |
-| 14      | 2    | Enc. 2      |
-| 16      | 2    | Enc. 3      |
-| 18      | 2    | Enc. 4      |
-| 20      | 2    | \Delta_t    |
+| 6       | 2    | IMU G_x     |
+| 8       | 2    | IMU G_y     |
+| 10      | 2    | IMU G_z     |
+| 12      | 2    | IMU R_x     |
+| 14      | 2    | IMU R_y     |
+| 16      | 2    | IMU R_z     |
+| 18      | 8    | Enc. 1      |
+| 26      | 8    | Enc. 2      |
+| 34      | 8    | Enc. 3      |
+| 42      | 8    | Enc. 4      |
+| 50      | 2    | V Enc. 1    |
+| 52      | 2    | V Enc. 2    |
+| 54      | 2    | V Enc. 3    |
+| 56      | 2    | V Enc. 4    |
 
 ### Turret target
 
