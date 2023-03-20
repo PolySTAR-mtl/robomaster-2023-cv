@@ -233,6 +233,9 @@ void SerialSpinner::handleMessage<serial::msg::PositionFeedback>(
     msg.imu_ax = position_feedback.imu_ax;
     msg.imu_ay = position_feedback.imu_ay;
     msg.imu_az = position_feedback.imu_az;
+    msg.imu_gx = position_feedback.imu_gx;
+    msg.imu_gy = position_feedback.imu_gy;
+    msg.imu_gz = position_feedback.imu_gz;
     msg.imu_rx = position_feedback.imu_rx;
     msg.imu_ry = position_feedback.imu_ry;
     msg.imu_rz = position_feedback.imu_rz;

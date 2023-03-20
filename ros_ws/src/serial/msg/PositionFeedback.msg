@@ -6,6 +6,9 @@ time stamp
 float32 imu_ax
 float32 imu_ay
 float32 imu_az
+float32 imu_gx
+float32 imu_gy
+float32 imu_gz
 float32 imu_rx
 float32 imu_ry
 float32 imu_rz
