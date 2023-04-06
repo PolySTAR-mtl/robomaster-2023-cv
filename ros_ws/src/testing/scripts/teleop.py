@@ -22,15 +22,16 @@ import numpy as np
 settings = termios.tcgetattr(sys.stdin)
 
 inc = 0.1  # Increment at each keystroke
+inc_rot = 0.001
 
 # Stored as x, y, rot
 mappings_wasd = {'w': np.array([inc, 0, 0]), 's': np.array(
     [-inc, 0, 0]), 'd': np.array([0, inc, 0]), 'a':  np.array([0, -inc, 0]),
-    'e': np.array([0, 0, inc]), 'q':  np.array([0, 0, -inc])}
+    'e': np.array([0, 0, inc_rot]), 'q':  np.array([0, 0, -inc_rot])}
 
 mappings_zqsd = {'z': np.array([inc, 0, 0]), 's': np.array(
     [-inc, 0, 0]), 'd': np.array([0, inc, 0]), 'q':  np.array([0, -inc, 0]),
-    'e': np.array([0, 0, inc]), 'a':  np.array([0, 0, -inc])}
+    'e': np.array([0, 0, inc_rot]), 'a':  np.array([0, 0, -inc_rot])}
 
 mappings = mappings_zqsd
 
