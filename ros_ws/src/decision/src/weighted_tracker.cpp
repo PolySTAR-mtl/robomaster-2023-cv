@@ -90,7 +90,7 @@ struct BoundingBox {
 
     bool contains(BoundingBox& inner) {
         return (this->upper_edge > inner.y && this->lower_edge < inner.y &&
-                this->left_edge<inner.x&& this->right_edge> inner.x);
+                this->left_edge < inner.x && this->right_edge > inner.x);
     }
 };
 
@@ -111,6 +111,17 @@ class SimpleTracker {
         BoundingBox::weightSentry = nh.param("weights/sty", 300.f);
         BoundingBox::weightSize = nh.param("weights/size", 0.125);
         BoundingBox::weightDist = nh.param("weights/dist", -1.f);
+
+        // Init camera matrix and distortion coefficients
+        focaleX = nh.param("camera_matrix/focale_x", 1252.05575f);
+        focaleY = nh.param("camera_matrix/focale_y", 1328.81294f);
+        centreX = nh.param("camera_matrix/centre_x", 501.770228f);
+        centreY = nh.param("camera_matrix/centre_y", 371.746642f);
+        k1 = nh.param("coefficients_distortion/k1", 0.0604408241f);
+        k2 = nh.param("coefficients_distortion/k2", 2.12039163f);
+        p1 = nh.param("coefficients_distortion/p1", 0.00371581404f);
+        p2 = nh.param("coefficients_distortion/p2", -0.0330357264f);
+        k3 = nh.param("coefficients_distortion/k3", -12.3306280f);
 
         std::cout << "Enemy color set to be: "
                   << (enemy_color == 0 ? "red" : "blue") << "\n";
@@ -154,6 +165,26 @@ class SimpleTracker {
     serial::Target toTarget(tracking::Tracklet& trk) {
         serial::Target target;
 
+        // La matrice calculée sur la caméra Jetson est
+        //(1/focale x , 0 , centre x)     (1.25205575e+03 , 0 , 5.01770228e+02)
+        //(0 , 1/focale y , centre y)  =  (0 , 1.32881294e+03 , 3.71746642e+02)
+        //(0 , 0 , 1)                   (0, 0, 1)
+
+        // La distance focale est en m. Un pixel est 1.12 um
+        // float distance_focale_x = (1 / 1252.05575) / (0.00000112);
+        // float distance_focale_y = (1 / 1328.81294) / (0.00000112);
+
+        // La taille (en m) de l'image est de 3280 pixels * 1.12 micromètres par
+        // pixel en x Et de 2464 pixels * 1.12 micromètres par pixel
+        // float centre_image_x = 0.0018368;
+        // float centre_image_y = 0.00137984;
+
+        // float centre_bbox_x = trk.x + trk.w / 2;
+        // float centre_bbox_y = trk.y + trk.h / 2;
+
+        // float theta = std::atan(centre_bbox_x - centreX / focaleX);
+        // float phi = std::atan(centre_bbox_y - centreY / focaleY);
+
         std::cout << "Det : " << trk.x << " ( " << trk.w << " ) " << trk.y
                   << " ( " << trk.h << " )\n";
 
@@ -174,7 +205,18 @@ class SimpleTracker {
         return target;
     }
 
+    // Static weights loaded from ROS
   private:
+    static float focaleX;
+    static float focaleY;
+    static float centreX;
+    static float centreY;
+    static float k1;
+    static float k2;
+    static float p1;
+    static float p2;
+    static float k3;
+
     ros::NodeHandle& nh;
     ros::Subscriber sub_tracklets;
     ros::Publisher pub_target;
