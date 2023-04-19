@@ -90,7 +90,7 @@ struct BoundingBox {
 
     bool contains(BoundingBox& inner) {
         return (this->upper_edge > inner.y && this->lower_edge < inner.y &&
-                this->left_edge < inner.x && this->right_edge > inner.x);
+                this->left_edge<inner.x&& this->right_edge> inner.x);
     }
 };
 
@@ -113,17 +113,9 @@ class SimpleTracker {
         BoundingBox::weightDist = nh.param("weights/dist", -1.f);
 
         // Init camera matrix and distortion coefficients
-        matriceCamera = {{nh.param("camera_matrix/focale_x", 1252.05575f), 0.0f,
-                          nh.param("camera_matrix/centre_x", 501.770228f)},
-                         {0.0f, nh.param("camera_matrix/focale_y", 1328.81294f),
-                          nh.param("camera_matrix/centre_y", 371.746642f)},
-                         {0.0f, 0.0f, 1.0f}};
-        matriceDistortion = {
-            nh.param("coefficients_distortion/k1", 0.0604408241f),
-            nh.param("coefficients_distortion/k2", 2.12039163f),
-            nh.param("coefficients_distortion/p1", 0.00371581404f),
-            nh.param("coefficients_distortion/p2", -0.0330357264f),
-            nh.param("coefficients_distortion/k3", -12.3306280f)};
+        nh.getParam("/camera/camera_matrix/data", camera_matrix);
+
+        nh.getParam("/camera/distorsion_coefficients/data", distorsion_coeffs);
 
         std::cout << "Enemy color set to be: "
                   << (enemy_color == 0 ? "red" : "blue") << "\n";
@@ -207,10 +199,9 @@ class SimpleTracker {
         return target;
     }
 
-    // Static weights loaded from ROS
   private:
-    static std::vector<std::vector<float>> matriceCamera;
-    static std::vector<float> matriceDistortion;
+    std::vector<float> camera_matrix;
+    std::vector<float> distorsion_coeffs;
 
     ros::NodeHandle& nh;
     ros::Subscriber sub_tracklets;
