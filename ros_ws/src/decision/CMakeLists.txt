@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 
+find_package(OpenCV REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -30,6 +31,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 add_executable(simple_tracker
@@ -50,6 +52,7 @@ add_executable(weighted_tracker
 
 target_link_libraries(weighted_tracker
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 )
 
 add_dependencies(weighted_tracker ${catkin_EXPORTED_TARGETS})

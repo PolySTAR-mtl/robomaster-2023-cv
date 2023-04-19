@@ -13,6 +13,10 @@
 
 #include <ros/ros.h>
 
+// OpenCV Includes
+
+#include <opencv2/imgproc.hpp>
+
 #include "serial/Target.h"
 #include "tracking/Tracklets.h"
 
