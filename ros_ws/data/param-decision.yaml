@@ -6,16 +6,3 @@ weights:
   sty: 300
   size: 0.125
   dist: -1
-// Les paramètres suivants sont tirés de 
-//https://github.com/Sebdar/jetson_camera/blob/master/camera_info/raspicam_v2.yaml
-camera_matrix:
-  focale_x: 1.25205575e+03
-  focale y: 1.32881294e+03
-  centre_x: 5.01770228e+02
-  centre_y: 3.71746642e+02
-coefficients_distortion:
-  k1: 6.04408241e-02
-  k2: 2.12039163e+00
-  p1: 3.71581404e-03
-  p2: -3.30357264e-02
-  k3: -1.23306280e+01
