@@ -1,5 +1,7 @@
 image_width: 640
 image_height: 480
+focal_length: 3.04e-3
+pixel_size: 1.2e-6
 camera_name: narrow_stereo
 camera_matrix:
   rows: 3

@@ -15,6 +15,7 @@
 
 // OpenCV Includes
 
+#include <opencv2/calib3d.hpp>
 #include <opencv2/imgproc.hpp>
 
 #include "serial/Target.h"
@@ -94,7 +95,7 @@ struct BoundingBox {
 
     bool contains(BoundingBox& inner) {
         return (this->upper_edge > inner.y && this->lower_edge < inner.y &&
-                this->left_edge<inner.x&& this->right_edge> inner.x);
+                this->left_edge < inner.x && this->right_edge > inner.x);
     }
 };
 
@@ -120,6 +121,14 @@ class SimpleTracker {
         nh.getParam("/camera/camera_matrix/data", camera_matrix);
 
         nh.getParam("/camera/distorsion_coefficients/data", distorsion_coeffs);
+
+        nh.getParam("/camera/image_width", im_w);
+        nh.getParam("/camera/image_height", im_h);
+
+        focal_length = nh.param("focal_length", 3.04e-3f);
+        pixel_size = nh.param("pixel_size", 1.2e-6f);
+
+        initMap();
 
         std::cout << "Enemy color set to be: "
                   << (enemy_color == 0 ? "red" : "blue") << "\n";
@@ -163,36 +172,25 @@ class SimpleTracker {
     serial::Target toTarget(tracking::Tracklet& trk) {
         serial::Target target;
 
-        // La matrice calculée sur la caméra Jetson est
-        //(1/focale x , 0 , centre x)     (1.25205575e+03 , 0 , 5.01770228e+02)
-        //(0 , 1/focale y , centre y)  =  (0 , 1.32881294e+03 , 3.71746642e+02)
-        //(0 , 0 , 1)                   (0, 0, 1)
-
-        // La distance focale est en m. Un pixel est 1.12 um
-        // float distance_focale_x = (1 / 1252.05575) / (0.00000112);
-        // float distance_focale_y = (1 / 1328.81294) / (0.00000112);
-
-        // La taille (en m) de l'image est de 3280 pixels * 1.12 micromètres par
-        // pixel en x Et de 2464 pixels * 1.12 micromètres par pixel
-        // float centre_image_x = 0.0018368;
-        // float centre_image_y = 0.00137984;
-
-        // float centre_bbox_x = trk.x + trk.w / 2;
-        // float centre_bbox_y = trk.y + trk.h / 2;
-
-        // float theta = std::atan(centre_bbox_x - centreX / focaleX);
-        // float phi = std::atan(centre_bbox_y - centreY / focaleY);
-
         std::cout << "Det : " << trk.x << " ( " << trk.w << " ) " << trk.y
                   << " ( " << trk.h << " )\n";
 
-        auto x_c = trk.x + trk.w / 2 - im_w / 2;
-        auto y_c = trk.y + trk.h / 2 - im_h / 2;
+        cv::Mat pixel_image({trk.x, trk.y});
+        cv::Mat pixel_undistort = pixel_image.clone();
 
-        std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
+        cv::remap(pixel_image, pixel_undistort, mat1, mat2, cv::INTER_LINEAR);
 
-        uint16_t theta = std::floor((y_c * alpha_y + M_PI_2) * 1000.f);
-        int16_t phi = std::floor(x_c * alpha_x * 1000.f);
+        cv::Mat c(3, 3, CV_32F, camera_matrix.data());
+        cv::Mat x(cv::Point3f{pixel_undistort.at<float>(0),
+                              pixel_undistort.at<float>(1), 1.f});
+
+        cv::Mat y;
+        cv::solve(c, x, y);
+
+        // std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
+
+        uint16_t theta = 0;
+        int16_t phi = 0;
 
         target.theta = theta;
         target.phi = phi;
@@ -203,9 +201,19 @@ class SimpleTracker {
         return target;
     }
 
+    void initMap() {
+        cv::Mat c(3, 3, CV_32F, camera_matrix.data());
+        cv::Mat d(1, 5, CV_32F, distorsion_coeffs.data());
+        auto new_c = cv::getOptimalNewCameraMatrix(c, d, {im_w, im_h}, 0);
+        cv::initUndistortRectifyMap(c, d, cv::Mat(), new_c, {im_w, im_h},
+                                    CV_32FC1, mat1, mat2);
+    }
+
   private:
     std::vector<float> camera_matrix;
     std::vector<float> distorsion_coeffs;
+
+    cv::Mat mat1, mat2;
 
     ros::NodeHandle& nh;
     ros::Subscriber sub_tracklets;
@@ -214,12 +222,11 @@ class SimpleTracker {
 
     tracking::Tracklet last_trk;
 
-    float im_w = 416 / 2;
-    float im_h = 416 / 2;
+    int im_w;
+    int im_h;
 
-    // Scaling factor
-    float alpha_y = 0.001;
-    float alpha_x = 0.01;
+    float focal_length;
+    float pixel_size;
 };
 
 int main(int argc, char** argv) {
