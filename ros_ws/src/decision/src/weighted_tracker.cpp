@@ -113,15 +113,17 @@ class SimpleTracker {
         BoundingBox::weightDist = nh.param("weights/dist", -1.f);
 
         // Init camera matrix and distortion coefficients
-        focaleX = nh.param("camera_matrix/focale_x", 1252.05575f);
-        focaleY = nh.param("camera_matrix/focale_y", 1328.81294f);
-        centreX = nh.param("camera_matrix/centre_x", 501.770228f);
-        centreY = nh.param("camera_matrix/centre_y", 371.746642f);
-        k1 = nh.param("coefficients_distortion/k1", 0.0604408241f);
-        k2 = nh.param("coefficients_distortion/k2", 2.12039163f);
-        p1 = nh.param("coefficients_distortion/p1", 0.00371581404f);
-        p2 = nh.param("coefficients_distortion/p2", -0.0330357264f);
-        k3 = nh.param("coefficients_distortion/k3", -12.3306280f);
+        matriceCamera = {{nh.param("camera_matrix/focale_x", 1252.05575f), 0.0f,
+                          nh.param("camera_matrix/centre_x", 501.770228f)},
+                         {0.0f, nh.param("camera_matrix/focale_y", 1328.81294f),
+                          nh.param("camera_matrix/centre_y", 371.746642f)},
+                         {0.0f, 0.0f, 1.0f}};
+        matriceDistortion = {
+            nh.param("coefficients_distortion/k1", 0.0604408241f),
+            nh.param("coefficients_distortion/k2", 2.12039163f),
+            nh.param("coefficients_distortion/p1", 0.00371581404f),
+            nh.param("coefficients_distortion/p2", -0.0330357264f),
+            nh.param("coefficients_distortion/k3", -12.3306280f)};
 
         std::cout << "Enemy color set to be: "
                   << (enemy_color == 0 ? "red" : "blue") << "\n";
@@ -207,15 +209,8 @@ class SimpleTracker {
 
     // Static weights loaded from ROS
   private:
-    static float focaleX;
-    static float focaleY;
-    static float centreX;
-    static float centreY;
-    static float k1;
-    static float k2;
-    static float p1;
-    static float p2;
-    static float k3;
+    static std::vector<std::vector<float>> matriceCamera;
+    static std::vector<float> matriceDistortion;
 
     ros::NodeHandle& nh;
     ros::Subscriber sub_tracklets;
