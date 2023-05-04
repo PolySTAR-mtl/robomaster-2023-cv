@@ -21,6 +21,8 @@
 #include "serial/Target.h"
 #include "tracking/Tracklets.h"
 
+int16_t radToMillirad(float rad) { return static_cast<int16_t>(rad * 1000); }
+
 enum class RoboType : int { Base = 3, Standard = 4, Hero = 5, Sentry = 6 };
 
 struct BoundingBox {
@@ -94,8 +96,8 @@ struct BoundingBox {
           height(bbox.h) {}
 
     bool contains(BoundingBox& inner) {
-        return (this->upper_edge > inner.y && this->lower_edge < inner.y &&
-                this->left_edge < inner.x && this->right_edge > inner.x);
+        return ((this->upper_edge > inner.y) && (this->lower_edge < inner.y) &&
+                (this->left_edge < inner.x) && (this->right_edge > inner.x));
     }
 };
 
@@ -119,9 +121,7 @@ class SimpleTracker {
 
         // Init camera matrix and distortion coefficients
         nh.getParam("/camera/camera_matrix/data", camera_matrix);
-
-        nh.getParam("/camera/distorsion_coefficients/data", distorsion_coeffs);
-
+        nh.getParam("/camera/distortion_coefficients/data", distorsion_coeffs);
         nh.getParam("/camera/image_width", im_w);
         nh.getParam("/camera/image_height", im_h);
 
@@ -176,9 +176,11 @@ class SimpleTracker {
                   << " ( " << trk.h << " )\n";
 
         cv::Mat pixel_image({trk.x, trk.y});
-        cv::Mat pixel_undistort = pixel_image.clone();
+        cv::Mat pixel_undistort(
+            {mat1.at<float>(trk.x, trk.y), mat2.at<float>(trk.x, trk.y)});
 
-        cv::remap(pixel_image, pixel_undistort, mat1, mat2, cv::INTER_LINEAR);
+        // cv::remap(pixel_image, pixel_undistort, mat1, mat2,
+        // cv::INTER_LINEAR);
 
         cv::Mat c(3, 3, CV_32F, camera_matrix.data());
         cv::Mat x(cv::Point3f{pixel_undistort.at<float>(0),
@@ -189,8 +191,13 @@ class SimpleTracker {
 
         // std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
 
-        uint16_t theta = 0;
-        int16_t phi = 0;
+        int16_t theta = radToMillirad(std::atan(y.at<float>(0) / focal_length));
+        int16_t phi = radToMillirad(std::atan(y.at<float>(1) / focal_length));
+
+        std::cout << "    Trk : \n"
+                  << pixel_image << "\n    Undistord\n"
+                  << pixel_undistort << "\n    y\n"
+                  << y << '\n';
 
         target.theta = theta;
         target.phi = phi;
@@ -204,9 +211,12 @@ class SimpleTracker {
     void initMap() {
         cv::Mat c(3, 3, CV_32F, camera_matrix.data());
         cv::Mat d(1, 5, CV_32F, distorsion_coeffs.data());
-        auto new_c = cv::getOptimalNewCameraMatrix(c, d, {im_w, im_h}, 0);
-        cv::initUndistortRectifyMap(c, d, cv::Mat(), new_c, {im_w, im_h},
-                                    CV_32FC1, mat1, mat2);
+        cv::Point im_size{im_w, im_h};
+        auto new_c = cv::getOptimalNewCameraMatrix(c, d, im_size, 0);
+        cv::initUndistortRectifyMap(c, d, cv::Mat(), new_c, im_size, CV_32FC1,
+                                    mat1, mat2);
+
+        std::cout << new_c << '\n';
     }
 
   private:
