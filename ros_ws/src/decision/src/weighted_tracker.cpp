@@ -176,18 +176,16 @@ class SimpleTracker {
                   << " ( " << trk.h << " )\n";
 
         cv::Mat pixel_image({trk.x, trk.y});
-        cv::Mat pixel_undistort(
-            {mat1.at<float>(trk.x, trk.y), mat2.at<float>(trk.x, trk.y)});
+        cv::Mat pixel_undistort(2, 1, CV_32FC1);
 
-        // cv::remap(pixel_image, pixel_undistort, mat1, mat2,
-        // cv::INTER_LINEAR);
+        pixel_undistort.at<float>(0) = mat1.at<float>(trk.x, trk.y);
+        pixel_undistort.at<float>(1) = mat2.at<float>(trk.x, trk.y);
 
-        cv::Mat c(3, 3, CV_32F, camera_matrix.data());
         cv::Mat x(cv::Point3f{pixel_undistort.at<float>(0),
                               pixel_undistort.at<float>(1), 1.f});
 
         cv::Mat y;
-        cv::solve(c, x, y);
+        cv::solve(new_c, x, y);
 
         // std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
 
@@ -200,7 +198,7 @@ class SimpleTracker {
                   << y << '\n';
 
         target.theta = theta;
-        target.phi = phi;
+        target.phi = -phi;
         target.dist = 2000u; // 2 m
         target.located = true;
         target.stamp = ros::Time::now();
@@ -210,10 +208,10 @@ class SimpleTracker {
 
     void initMap() {
         cv::Mat c(3, 3, CV_32F, camera_matrix.data());
-        cv::Mat d(1, 5, CV_32F, distorsion_coeffs.data());
+        cv::Mat d(5, 1, CV_32F, distorsion_coeffs.data());
         cv::Point im_size{im_w, im_h};
-        auto new_c = cv::getOptimalNewCameraMatrix(c, d, im_size, 0);
-        cv::initUndistortRectifyMap(c, d, cv::Mat(), new_c, im_size, CV_32FC1,
+        new_c = cv::getOptimalNewCameraMatrix(c, d, im_size, 0);
+        cv::initUndistortRectifyMap(c, d, cv::Mat(), new_c, im_size, CV_32F,
                                     mat1, mat2);
 
         std::cout << new_c << '\n';
@@ -223,7 +221,7 @@ class SimpleTracker {
     std::vector<float> camera_matrix;
     std::vector<float> distorsion_coeffs;
 
-    cv::Mat mat1, mat2;
+    cv::Mat new_c, mat1, mat2;
 
     ros::NodeHandle& nh;
     ros::Subscriber sub_tracklets;
