@@ -101,13 +101,13 @@ struct BoundingBox {
     }
 };
 
-class SimpleTracker {
+class WeightedTracker {
 
   public:
-    SimpleTracker(ros::NodeHandle& n, int _enemy_color)
+    WeightedTracker(ros::NodeHandle& n, int _enemy_color)
         : nh(n), enemy_color(_enemy_color) {
         sub_tracklets = nh.subscribe("tracklets", 1,
-                                     &SimpleTracker::callbackTracklets, this);
+                                     &WeightedTracker::callbackTracklets, this);
 
         pub_target = nh.advertise<serial::Target>("target", 1);
 
@@ -268,7 +268,7 @@ int main(int argc, char** argv) {
         throw std::runtime_error("Enemy color should be 0 (red) or 1 (blue)");
     }
 
-    SimpleTracker tracker(nh, enemy_color);
+    WeightedTracker tracker(nh, enemy_color);
 
     ros::spin();
 }
