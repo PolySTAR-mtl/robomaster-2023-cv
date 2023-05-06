@@ -1,1 +1,8 @@
 enemy_color: 1
+weights:
+  base: 200
+  std: 400
+  hro: 1000
+  sty: 300
+  size: 0.125
+  dist: -1
