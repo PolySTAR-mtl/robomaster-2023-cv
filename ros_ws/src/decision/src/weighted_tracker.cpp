@@ -1,4 +1,4 @@
-/** \file thomas_tracker.cpp
+/** \file weighted_tracker.cpp
  * \brief Simple targeting node
  *
  * \author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -189,8 +189,8 @@ class SimpleTracker {
 
         // std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
 
-        uint16_t theta = 0;
-        int16_t phi = 0;
+        double theta = atan(y.at<float>(0) / focal_length);
+        double phi = atan(y.at<float>(0) / focal_length);
 
         target.theta = theta;
         target.phi = phi;
