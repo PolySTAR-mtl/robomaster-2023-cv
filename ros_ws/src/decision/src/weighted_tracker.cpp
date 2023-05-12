@@ -196,10 +196,6 @@ class WeightedTracker {
 
         std::cout << "solve\n" << y << '\n';
 
-<<<<<<< HEAD
-        double theta = atan(y.at<float>(0) / focal_length);
-        double phi = atan(y.at<float>(0) / focal_length);
-=======
         y.at<float>(0) /= y.at<float>(2);
         y.at<float>(1) /= y.at<float>(2);
 
@@ -210,7 +206,6 @@ class WeightedTracker {
                   << pixel_image << "\n    Undistord\n"
                   << pixel_undistort << "\n    y\n"
                   << y << '\n';
->>>>>>> main
 
         target.theta = theta;
         target.phi = -phi;
