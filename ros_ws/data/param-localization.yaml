@@ -1,0 +1,68 @@
+# State estimation parameters for the EKF localization node
+
+frequency: 100.
+two_d_mode: true
+publish_tf: true
+
+map_frame: map
+odom_frame: odom
+base_link_frame: base_link
+world_frame: odom
+
+# Odometry : absolute encoder
+odom0: "/locate/odom"
+odom0_config:
+  - true  # X
+  - true  # Y
+  - false # Z
+  - false # roll
+  - false # pitch
+  - true  # yaw
+  - false # \dot{X}
+  - false # \dot{Y}
+  - false # \dot{Z}
+  - false # \dot{roll}
+  - false # \dot{pitch}
+  - false # \dot{yaw}
+  - false # \ddot{X}
+  - false # \ddot{Y}
+  - false # \ddot{Z}
+odom0_differential: true
+
+# Odometry : speed
+odom1: "/locate/odom_speed"
+odom1_config:
+  - false # X
+  - false # Y
+  - false # Z
+  - false # roll
+  - false # pitch
+  - false  # yaw
+  - true # \dot{X}
+  - true # \dot{Y}
+  - false # \dot{Z}
+  - false # \dot{roll}
+  - false # \dot{pitch}
+  - true  # \dot{yaw}
+  - false # \ddot{X}
+  - false # \ddot{Y}
+  - false # \ddot{Z}
+
+# IMU
+imu0: "/locate/imu"
+imu0_config:
+  - false # X
+  - false # Y
+  - false # Z
+  - true # roll
+  - true # pitch
+  - true # yaw
+  - false # \dot{X}
+  - false # \dot{Y}
+  - false # \dot{Z}
+  - true  # \dot{roll}
+  - true  # \dot{pitch}
+  - true  # \dot{yaw}
+  - true  # \ddot{X}
+  - true  # \ddot{Y}
+  - true # \ddot{Z}

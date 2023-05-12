@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<robot name="ICRA">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.4 0.4 0.2"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <link name="turret">
+    <visual>
+      <geometry>
+        <cylinder length="0.2" radius="0.05"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 1.57075 0"/>
+    </visual>
+  </link>
+
+  <joint name="base_to_turret" type="fixed">
+    <parent link="base_link"/>
+    <child link="turret"/>
+    <origin xyz="0 0 0.5"/>
+  </joint>
+</robot>

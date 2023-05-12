@@ -99,4 +99,6 @@ class SerialSpinner {
     int baud_rate, length, stop_bits;
     bool parity;
     double frequency;
+
+    int64_t encoder_resolution;
 };

@@ -1,0 +1,4 @@
+<launch>
+    <!-- Nodes -->
+    <node name="static_turret" pkg="tf" type="static_transform_publisher" args="0 0 0.5 0 0 0 1 base_link turret 10"/>
+</launch>
