@@ -21,6 +21,8 @@
 #include "serial/Target.h"
 #include "tracking/Tracklets.h"
 
+int16_t radToMillirad(float rad) { return static_cast<int16_t>(rad * 1000); }
+
 enum class RoboType : int { Base = 3, Standard = 4, Hero = 5, Sentry = 6 };
 
 struct BoundingBox {
@@ -94,18 +96,18 @@ struct BoundingBox {
           height(bbox.h) {}
 
     bool contains(BoundingBox& inner) {
-        return (this->upper_edge > inner.y && this->lower_edge < inner.y &&
-                this->left_edge < inner.x && this->right_edge > inner.x);
+        return ((this->upper_edge > inner.y) && (this->lower_edge < inner.y) &&
+                (this->left_edge < inner.x) && (this->right_edge > inner.x));
     }
 };
 
-class SimpleTracker {
+class WeightedTracker {
 
   public:
-    SimpleTracker(ros::NodeHandle& n, int _enemy_color)
+    WeightedTracker(ros::NodeHandle& n, int _enemy_color)
         : nh(n), enemy_color(_enemy_color) {
         sub_tracklets = nh.subscribe("tracklets", 1,
-                                     &SimpleTracker::callbackTracklets, this);
+                                     &WeightedTracker::callbackTracklets, this);
 
         pub_target = nh.advertise<serial::Target>("target", 1);
 
@@ -118,12 +120,17 @@ class SimpleTracker {
         BoundingBox::weightDist = nh.param("weights/dist", -1.f);
 
         // Init camera matrix and distortion coefficients
-        nh.getParam("/camera/camera_matrix/data", camera_matrix);
+        bool cam_param = true;
+        cam_param &= nh.getParam("/camera/camera_matrix/data", camera_matrix);
+        cam_param &= nh.getParam("/camera/distortion_coefficients/data",
+                                 distorsion_coeffs);
+        cam_param &= nh.getParam("/camera/image_width", im_w);
+        cam_param &= nh.getParam("/camera/image_height", im_h);
 
-        nh.getParam("/camera/distorsion_coefficients/data", distorsion_coeffs);
-
-        nh.getParam("/camera/image_width", im_w);
-        nh.getParam("/camera/image_height", im_h);
+        if (!cam_param) {
+            throw std::runtime_error("WeightedTracker::WeightedTracker() : "
+                                     "Could not fetch camera parameters");
+        }
 
         focal_length = nh.param("focal_length", 3.04e-3f);
         pixel_size = nh.param("pixel_size", 1.2e-6f);
@@ -176,24 +183,37 @@ class SimpleTracker {
                   << " ( " << trk.h << " )\n";
 
         cv::Mat pixel_image({trk.x, trk.y});
-        cv::Mat pixel_undistort = pixel_image.clone();
+        cv::Mat pixel_undistort(2, 1, CV_32FC1);
 
-        cv::remap(pixel_image, pixel_undistort, mat1, mat2, cv::INTER_LINEAR);
+        pixel_undistort.at<float>(0) = mat1.at<float>(trk.y, trk.x);
+        pixel_undistort.at<float>(1) = mat2.at<float>(trk.y, trk.x);
 
-        cv::Mat c(3, 3, CV_32F, camera_matrix.data());
         cv::Mat x(cv::Point3f{pixel_undistort.at<float>(0),
                               pixel_undistort.at<float>(1), 1.f});
 
         cv::Mat y;
-        cv::solve(c, x, y);
+        cv::solve(new_c, x, y);
 
-        // std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
+        std::cout << "solve\n" << y << '\n';
 
+<<<<<<< HEAD
         double theta = atan(y.at<float>(0) / focal_length);
         double phi = atan(y.at<float>(0) / focal_length);
+=======
+        y.at<float>(0) /= y.at<float>(2);
+        y.at<float>(1) /= y.at<float>(2);
+
+        int16_t theta = radToMillirad(std::atan(y.at<float>(0)));
+        int16_t phi = radToMillirad(std::atan(y.at<float>(1)));
+
+        std::cout << "    Trk : \n"
+                  << pixel_image << "\n    Undistord\n"
+                  << pixel_undistort << "\n    y\n"
+                  << y << '\n';
+>>>>>>> main
 
         target.theta = theta;
-        target.phi = phi;
+        target.phi = -phi;
         target.dist = 2000u; // 2 m
         target.located = true;
         target.stamp = ros::Time::now();
@@ -203,17 +223,28 @@ class SimpleTracker {
 
     void initMap() {
         cv::Mat c(3, 3, CV_32F, camera_matrix.data());
-        cv::Mat d(1, 5, CV_32F, distorsion_coeffs.data());
-        auto new_c = cv::getOptimalNewCameraMatrix(c, d, {im_w, im_h}, 0);
-        cv::initUndistortRectifyMap(c, d, cv::Mat(), new_c, {im_w, im_h},
-                                    CV_32FC1, mat1, mat2);
+        cv::Mat d(5, 1, CV_32F, distorsion_coeffs.data());
+        cv::Point im_size{im_w, im_h};
+        new_c = cv::getOptimalNewCameraMatrix(c, d, im_size, 1.f, cv::Size(), 0,
+                                              true);
+        cv::initUndistortRectifyMap(c, d, cv::Mat(), new_c, im_size, CV_32F,
+                                    mat1, mat2);
+
+        std::cout << "c\n" << c << '\n';
+        std::cout << "new_c\n" << new_c << '\n';
+
+        im_center = cv::Mat(2, 1, CV_32F);
+        im_center.at<float>(0) = new_c.at<float>(0, 2) / new_c.at<float>(0, 0);
+        im_center.at<float>(1) = new_c.at<float>(1, 2) / new_c.at<float>(1, 1);
+
+        std::cout << "im_center" << im_center << '\n';
     }
 
   private:
     std::vector<float> camera_matrix;
     std::vector<float> distorsion_coeffs;
 
-    cv::Mat mat1, mat2;
+    cv::Mat new_c, mat1, mat2, im_center;
 
     ros::NodeHandle& nh;
     ros::Subscriber sub_tracklets;
@@ -242,7 +273,7 @@ int main(int argc, char** argv) {
         throw std::runtime_error("Enemy color should be 0 (red) or 1 (blue)");
     }
 
-    SimpleTracker tracker(nh, enemy_color);
+    WeightedTracker tracker(nh, enemy_color);
 
     ros::spin();
 }
