@@ -11,6 +11,8 @@
 // ROS includes
 
 #include <ros/ros.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
 
 #include "serial/Target.h"
 #include "tracking/Tracklets.h"
@@ -18,7 +20,7 @@
 class SimpleTracker {
   public:
     SimpleTracker(ros::NodeHandle& n, int _enemy_color)
-        : nh(n), enemy_color(_enemy_color) {
+        : nh(n), enemy_color(_enemy_color), tListener(tBuffer) {
         sub_tracklets = nh.subscribe("tracklets", 1,
                                      &SimpleTracker::callbackTracklets, this);
 
@@ -58,17 +60,29 @@ class SimpleTracker {
         std::cout << "Det : " << trk.x << " ( " << trk.w << " ) " << trk.y
                   << " ( " << trk.h << " )\n";
 
-        auto x_c = trk.x + trk.w / 2 - im_w / 2;
-        auto y_c = trk.y + trk.h / 2 - im_h / 2;
+        auto x_c = static_cast<float>(trk.x + trk.w / 2 - im_w / 2);
+        auto y_c = static_cast<float>(trk.y + trk.h / 2 - im_h / 2);
 
         std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
 
         // Simple approximation .. if we consider x_c & y_c to be low enough
         int16_t theta = std::floor(y_c * alpha_y * 1000.f);
         int16_t phi = std::floor(x_c * alpha_x * 1000.f);
+	
+	tf2::Quaternion qTurret;
+	auto transformTurret = tBuffer.lookupTransform("base_link", "turret", ros::Time(0));
+	tf2::convert(transformTurret.transform.rotation, qTurret);
 
-        target.theta = theta;
-        target.phi = phi;
+	std::cout << qTurret << '\n';
+
+	double roll, pitch, yaw;
+	tf2::Matrix3x3 m(qTurret);
+	m.getRPY(roll, pitch, yaw);
+
+	std::cout << "Turret : p = " << pitch << ", y = " << yaw << '\n';
+
+        target.theta = pitch - theta;
+        target.phi = yaw + phi;
         target.dist = 2000u; // 2 m
         target.located = true;
         target.stamp = ros::Time::now();
@@ -84,12 +98,15 @@ class SimpleTracker {
 
     tracking::Tracklet last_trk;
 
-    float im_w = 416 / 2;
-    float im_h = 416 / 2;
+    float im_w = 416.f / 2.f;
+    float im_h = 416.f / 2.f;
 
     // Scaling factor
-    float alpha_y = 0.001;
-    float alpha_x = 0.01;
+    float alpha_y = 0.0007;
+    float alpha_x = 0.0014;
+
+    tf2_ros::Buffer tBuffer;
+    tf2_ros::TransformListener tListener;
 };
 
 int main(int argc, char** argv) {
