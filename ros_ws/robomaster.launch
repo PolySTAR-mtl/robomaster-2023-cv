@@ -29,4 +29,10 @@
     <!--<remap from="/main_camera/image_raw" to="/detection/image_in"/>-->
     <!--<include file="$(find jetson_camera)/launch/jetson_camera.launch"/>-->
 
+    <include file="$(find locate)/launch/locate.launch">
+        <arg name="ekf_config" value="$(arg workspace)/data/param-localization.yaml"/>
+        <arg name="robot_dimensions" value="$(arg workspace)/data/models/icra.yaml"/>
+        <arg name="robot_model" value="$(arg workspace)/data/models/icra.xml"/>
+    </include>
+
 </launch>
