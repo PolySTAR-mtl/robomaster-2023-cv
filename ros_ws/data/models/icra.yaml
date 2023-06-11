@@ -1,0 +1,5 @@
+robot:
+  wheel_radius: 0.080
+  l_x: 0.428
+  l_y: 0.415
+  encoder_resolution: 8192
