@@ -1,4 +1,4 @@
-/** \file thomas_tracker.cpp
+/** \file weighted_tracker.cpp
  * \brief Simple targeting node
  *
  * \author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -12,6 +12,8 @@
 // ROS includes
 
 #include <ros/ros.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
 
 // OpenCV Includes
 
@@ -105,7 +107,7 @@ class WeightedTracker {
 
   public:
     WeightedTracker(ros::NodeHandle& n, int _enemy_color)
-        : nh(n), enemy_color(_enemy_color) {
+        : tListener(tBuffer), nh(n), enemy_color(_enemy_color) {
         sub_tracklets = nh.subscribe("tracklets", 1,
                                      &WeightedTracker::callbackTracklets, this);
 
@@ -199,8 +201,23 @@ class WeightedTracker {
         y.at<float>(0) /= y.at<float>(2);
         y.at<float>(1) /= y.at<float>(2);
 
-        int16_t theta = radToMillirad(std::atan(y.at<float>(0)));
-        int16_t phi = radToMillirad(std::atan(y.at<float>(1)));
+        tf2::Quaternion qTarget, qTurret;
+        qTarget.setRPY(0., std::atan(y.at<float>(1)),
+                       std::atan(y.at<float>(0)));
+
+        auto transformTurret =
+            tBuffer.lookupTransform("base_link", "turret", ros::Time(0));
+        tf2::convert(transformTurret.transform.rotation, qTurret);
+
+        qTarget *= qTurret;
+
+        tf2::Matrix3x3 m(qTarget);
+
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+
+        int16_t theta = radToMillirad(pitch);
+        int16_t phi = radToMillirad(yaw);
 
         std::cout << "    Trk : \n"
                   << pixel_image << "\n    Undistord\n"
@@ -236,6 +253,9 @@ class WeightedTracker {
     }
 
   private:
+    tf2_ros::Buffer tBuffer;
+    tf2_ros::TransformListener tListener;
+
     std::vector<float> camera_matrix;
     std::vector<float> distorsion_coeffs;
 

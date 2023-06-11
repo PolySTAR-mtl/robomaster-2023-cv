@@ -14,14 +14,9 @@
   <build_depend>detection</build_depend>
   <build_depend>serial</build_depend>
   <build_depend>tracking</build_depend>
-  <build_depend>tf2</build_depend>
-  <build_depend>tf2_ros</build_depend>
-
   <exec_depend>detection</exec_depend>
   <exec_depend>serial</exec_depend>
   <exec_depend>tracking</exec_depend>
-  <exec_depend>tf2</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
 
   <export></export>
 

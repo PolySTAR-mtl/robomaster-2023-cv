@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   detection
   serial
+  tf2
+  tf2_ros
 )
 
 
@@ -20,7 +22,7 @@ find_package(OpenCV REQUIRED)
 ###################################
 
 catkin_package(
-  CATKIN_DEPENDS detection serial
+  CATKIN_DEPENDS detection serial tf2 tf2_ros
 )
 
 ###########

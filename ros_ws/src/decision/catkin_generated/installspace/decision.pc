@@ -1,0 +1,8 @@
+prefix=/home/ozone/robomaster-2023-cv/ros_ws/install
+
+Name: decision
+Description: Description of decision
+Version: 0.1.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: detection serial
