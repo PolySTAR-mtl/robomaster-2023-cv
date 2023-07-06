@@ -18,7 +18,7 @@ import sys
 # Parser
 
 parser = argparse.ArgumentParser()
-subparser = parser.add_subparsers(dest='command', help='Command to run')
+subparser = parser.add_subparsers(dest='command', help='Command to run : ', required=True)
 subparser.add_parser('enable', help='Enable daemon')
 subparser.add_parser('disable', help='Disable daemon')
 subparser.add_parser('start', help='Manually start daemon')
