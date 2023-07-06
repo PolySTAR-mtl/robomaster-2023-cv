@@ -11,6 +11,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <std_msgs/String.h>
 
 #include "detection/Detections.h"
 
@@ -40,12 +41,19 @@ class DeepstreamDetector {
      */
     void callback(detection::Detections&);
 
+    /** \fn callbackCommand
+     * \brief Handle incoming (text) commands
+     * \todo Define propoer ROS messages
+     */
+    void callbackCommand(std_msgs::StringConstPtr& str);
+
   private:
     void setupNet(const std::string& deepstream_config);
 
     ros::NodeHandle& nh;
 
     ros::Publisher pub_detections;
+    ros::Subscriber sub_commands;
 
     int fake_argc;
     std::vector<const char*> fake_argv;

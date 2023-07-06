@@ -56,7 +56,11 @@ void deepstreamCallback(void* appCtx_v, void* batch_meta_v) {
             dets.detections.push_back(det);
         }
     }
+
     det_callback(dets);
+
+    // Spin to fetch possible commands
+    ros::spinOnce();
 }
 }
 
@@ -64,6 +68,8 @@ DeepstreamDetector::DeepstreamDetector(ros::NodeHandle& n,
                                        const std::string& deepstream_config)
     : nh(n) {
     pub_detections = nh.advertise<detection::Detections>("detections", 1);
+    sub_commands =
+        nh.subscribe("control", 1, &DeepstreamDetector::callbackCommand, this);
 
     setupNet(deepstream_config);
 }
@@ -83,4 +89,14 @@ void DeepstreamDetector::run() {
 
 void DeepstreamDetector::callback(detection::Detections& dets) {
     pub_detections.publish(dets);
+}
+
+void DeepstreamDetector::callbackCommand(std_msgs::StringConstPtr& msg) {
+    if (msg.data == "stop") {
+
+    } else {
+        std::cerr
+            << "DeepstreamDetector::callbackCommand() : Unsupported command "
+            << msg.data << '\n';
+    }
 }

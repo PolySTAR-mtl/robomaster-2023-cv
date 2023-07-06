@@ -533,6 +533,11 @@ process_buffer (GstBuffer * buf, AppCtx * appCtx, guint index)
   }
 }
 
+/** \brief Declare the callback for our C++ interface, not
+ * bothering with type
+ */
+void deepstreamCallback(void*, void*);
+
 /**
  * Buffer probe function to get the results of primary infer.
  * Here it demonstrates the use by dumping bounding box coordinates in
@@ -551,6 +556,7 @@ gie_primary_processing_done_buf_prob (GstPad * pad, GstPadProbeInfo * info,
   }
 
   write_kitti_output (appCtx, batch_meta);
+  deepstreamCallback(appCtx, batch_meta);
 
   return GST_PAD_PROBE_OK;
 }
@@ -573,11 +579,6 @@ gie_processing_done_buf_prob (GstPad * pad, GstPadProbeInfo * info,
   return GST_PAD_PROBE_OK;
 }
 
-/** \brief Declare the callback for our C++ interface, not
- * bothering with type
- */
-void deepstreamCallback(void*, void*);
-
 /**
  * Buffer probe function after tracker.
  */
@@ -593,8 +594,6 @@ analytics_done_buf_prob (GstPad * pad, GstPadProbeInfo * info, gpointer u_data)
     NVGSTDS_WARN_MSG_V ("Batch meta not found for buffer %p", buf);
     return GST_PAD_PROBE_OK;
   }
-
-  deepstreamCallback(appCtx, batch_meta);
 
   return GST_PAD_PROBE_OK;
 }
