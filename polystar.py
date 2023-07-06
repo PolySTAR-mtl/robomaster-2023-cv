@@ -14,6 +14,7 @@
 
 import argparse
 import sys
+import subprocess
 
 # Parser
 
@@ -26,6 +27,7 @@ subparser.add_parser('kill', help='Manually kill daemon')
 subparser.add_parser('restart', help='Manually restart daemon')
 subparser.add_parser('run', help='Run pipeline')
 subparser.add_parser('stop', help='Stop pipeline')
+subparser.add_parser('status', help='Get pipeline status')
 
 set_enemy_parser = subparser.add_parser('set-enemy', help='Set enemy color')
 set_enemy_parser.add_argument('color', choices=['blue', 'red'], help='Enemy color')
@@ -35,28 +37,42 @@ shoot_parser.add_argument('val', choices=['on', 'off'])
 
 # Commands
 
+sysctl = '/bin/systemctl --user'
+
 def is_daemon_running():
-    pass
+    proc = subprocess.run(f'{sysctl} status polystar', shell=True, capture_output=True, text=True)
+    return proc.stdout.contains('active (running)')
+
+def call_systemd(command: str):
+    proc = subprocess.run(f'{sysctl} {command} polystar', shell=True, capture_output=True)
+    if proc.returncode == 0:
+        print('Success')
+        return proc.stdout
+    else:
+        print(f'Error :\n{proc.stderr.decode()}')
 
 def enable():
     print('Enabling daemon')
-    print('Success')
+    return call_systemd('enable')
 
 def disable():
     print('Disabling daemon')
-    print('Success')
+    return call_systemd('disable')
 
 def start():
     print('Starting daemon')
-    print('Success')
+    return call_systemd('start')
 
 def kill():
     print('Killing daemon')
-    print('Success')
+    return call_systemd('stop')
 
 def restart():
     kill()
     start()
+
+def status():
+    print(call_systemd('status').decode())
 
 def run():
     print('Running the pipeline')
@@ -69,13 +85,17 @@ def stop():
     """
     print('Stopping the pipeline')
 
-    print('Success')
+    print('Unimplemented')
 
 def set_enemy(color):
-    pass
+    print(f'Changing color to {color}')
+
+    print('Unimplemented')
 
 def shoot(val):
-    pass
+    print(f'Shooting to {val}')
+
+    print('Unimplemented')
 
 def main():
     args = parser.parse_args()
@@ -89,6 +109,8 @@ def main():
         kill()
     elif args.command == 'restart':
         restart()
+    elif args.command == 'status':
+        status()
     elif args.command == 'run':
         run()
     elif args.command == 'stop':
