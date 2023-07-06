@@ -90,6 +90,7 @@ class SimpleTracker {
         target.dist = 2000u; // 2 m
         target.located = true;
         target.stamp = ros::Time::now();
+        target.distance_center = std::hypot(x_c, y_c);
 
         return target;
     }
