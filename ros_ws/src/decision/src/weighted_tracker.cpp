@@ -209,9 +209,10 @@ class WeightedTracker {
             tBuffer.lookupTransform("base_link", "turret", ros::Time(0));
         tf2::convert(transformTurret.transform.rotation, qTurret);
 
-        qTarget *= qTurret;
+        //qTarget *= qTurret;
+        qTurret *= qTarget;
 
-        tf2::Matrix3x3 m(qTarget);
+        tf2::Matrix3x3 m(qTurret);
 
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
@@ -225,7 +226,7 @@ class WeightedTracker {
                   << y << '\n';
 
         target.theta = theta;
-        target.phi = -phi;
+        target.phi = phi;
         target.dist = 2000u; // 2 m
         target.located = true;
         target.stamp = ros::Time::now();
