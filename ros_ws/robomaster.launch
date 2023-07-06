@@ -7,7 +7,7 @@
     <rosparam command="load" file="$(arg workspace)/data/param-camera.yaml" ns="camera"/>
 
     <!-- Nodes -->
-    <include file="$(find decision)/launch/weighted_tracker.launch">
+    <include file="$(find decision)/launch/simple_decision.launch">
         <arg name="params_path" value="$(arg workspace)/data/param-decision.yaml"/>
     </include>
 

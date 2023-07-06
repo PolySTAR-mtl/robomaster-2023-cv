@@ -88,9 +88,18 @@ def stop():
     print('Unimplemented')
 
 def set_enemy(color):
-    print(f'Changing color to {color}')
+    print(f'Setting color to {color}')
 
-    print('Unimplemented')
+    color_int = 0 if color == 'red' else 1
+    try:
+        proc = subprocess.run(f'rosrun dynamic_reconfigure dynparam set /decision enemy_color {color_int}', shell=True, capture_output=True, timeout=10)
+    except TimeoutError as te:
+        print(f'Error : Unresponsive after {te.timeout} seconds')
+    
+    if proc.returncode == 0:
+        print('Success')
+    else:
+        print(f'Error :\n{proc.stderr.decode()}')
 
 def shoot(val):
     print(f'Shooting to {val}')
