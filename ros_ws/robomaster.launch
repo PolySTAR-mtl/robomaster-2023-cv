@@ -4,6 +4,7 @@
 
     <!-- Global parameters -->
     <rosparam command="load" file="$(arg workspace)/data/models/icra.yaml"/>
+    <rosparam command="load" file="$(arg workspace)/data/param-camera.yaml" ns="camera"/>
 
     <!-- Nodes -->
     <include file="$(find decision)/launch/weighted_tracker.launch">
