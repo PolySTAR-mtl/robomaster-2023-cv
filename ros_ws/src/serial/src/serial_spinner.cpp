@@ -337,7 +337,7 @@ void SerialSpinner::callbackTarget(const serial::TargetConstPtr& target) {
     msg.pitch = target->theta;
     msg.yaw = target->phi;
 
-    std::cout << "Target   : " << msg.pitch << ' ' << msg.yaw << '\n';
+    std::cout << "Serial:: Target   : " << msg.pitch << ' ' << msg.yaw << '\n';
 
     sendMessage(order);
 }
@@ -352,17 +352,23 @@ void SerialSpinner::callbackMovement(const serial::MovementConstPtr& move) {
     msg.v_y = utils::toMillimeter(move->v_y);
     msg.omega = utils::toAngularSpeed(move->omega);
 
-    std::cout << "Movement : " << msg.v_x << ' ' << msg.v_y << ' ' << msg.omega
-              << '\n';
+    std::cout << "Serial:: Movement : " << msg.v_x << ' ' << msg.v_y << ' '
+              << msg.omega << '\n';
 
     sendMessage(order);
 }
 
-void SerialSpinner::callbackShoot(const serial::ShootConstPtr&) {
+void SerialSpinner::callbackShoot(const serial::ShootConstPtr& shoot) {
     using namespace serial::msg;
-    OutgoingMessage order{.shoot_order = {}};
 
-    std::cout << "Shooting\n";
+    if (!shooting_enabled) {
+        return;
+    }
+
+    OutgoingMessage order{.shoot_order = {shoot->shoot ? '\xFF' : '\0'}};
+
+    std::cout << "Serial:: Shooting " << (shoot->shoot ? "enabled" : "disabled")
+              << '\n';
     sendMessage(order);
 }
 

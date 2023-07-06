@@ -101,4 +101,6 @@ class SerialSpinner {
     double frequency;
 
     int64_t encoder_resolution;
+
+    bool shooting_enabled = true;
 };
