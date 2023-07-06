@@ -12,17 +12,22 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   tf2
   tf2_ros
+  dynamic_reconfigure
 )
 
 
 find_package(OpenCV REQUIRED)
+
+generate_dynamic_reconfigure_options(
+  cfg/decision.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
 ###################################
 
 catkin_package(
-  CATKIN_DEPENDS detection serial tf2 tf2_ros
+  CATKIN_DEPENDS detection serial tf2 tf2_ros dynamic_reconfigure
 )
 
 ###########
@@ -45,6 +50,9 @@ target_link_libraries(simple_tracker
 )
 
 add_dependencies(simple_tracker ${catkin_EXPORTED_TARGETS})
+
+# dyn_reconf dependencies
+add_dependencies(simple_tracker ${PROJECT_NAME}_gencfg)
 
 # Weighted tracker
 
