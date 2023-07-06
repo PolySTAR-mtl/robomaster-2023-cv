@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 @file shooting.py
 @brief Sends / disables shooting orders for C&S
@@ -46,11 +45,3 @@ class Shooter:
                 # Target acquired. Start shooting now
                 self.is_shooting = True
                 self.pub_shoot.publish(Shoot(shoot=True))
-
-
-if __name__ == '__main__':
-    rospy.init_node('shooting', anonymous=False)
-    detector = Shooter()
-
-    while not rospy.is_shutdown():
-        rospy.spin()
