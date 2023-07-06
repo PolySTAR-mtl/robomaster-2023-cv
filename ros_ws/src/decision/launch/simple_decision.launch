@@ -10,6 +10,6 @@
         <rosparam command="load" file="$(arg params_path)"/>
     </node>
 
-    <node name="shooter" pkg="decision" type="shooting.py" output="screen"/>
+    <node name="control" pkg="decision" type="robot_control.py" output="screen"/>
 
 </launch>
