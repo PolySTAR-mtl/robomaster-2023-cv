@@ -1,4 +1,4 @@
-enemy_color: 1
+enemy_color: 0
 weights:
   base: 200
   std: 400

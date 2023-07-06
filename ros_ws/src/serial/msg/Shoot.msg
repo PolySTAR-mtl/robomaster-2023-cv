@@ -2,3 +2,4 @@
 ## Shoot order
 
 time stamp
+bool shoot

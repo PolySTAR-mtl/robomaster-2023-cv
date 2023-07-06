@@ -109,6 +109,8 @@ struct Move : Header<Move> {
 
 struct Shoot : Header<Shoot> {
     static constexpr uint8_t ID = 0x12;
+
+    int8_t shoot; // 0 no, anything else is fire at will
 } __attribute__((packed));
 
 union IncomingMessage {

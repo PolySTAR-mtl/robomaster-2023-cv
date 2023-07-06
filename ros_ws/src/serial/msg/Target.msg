@@ -6,6 +6,8 @@
 time stamp
 bool located
 
+float32 distance_center
+
 int16 theta    # milli-ad
 int16 phi       # millirad
 uint16 dist     # mm
