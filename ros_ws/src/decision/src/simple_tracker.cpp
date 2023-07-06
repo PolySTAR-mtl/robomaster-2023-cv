@@ -17,6 +17,9 @@
 #include "serial/Target.h"
 #include "tracking/Tracklets.h"
 
+#include "decision/DecisionConfig.h"
+#include <dynamic_reconfigure/server.h>
+
 class SimpleTracker {
   public:
     SimpleTracker(ros::NodeHandle& n, int _enemy_color)
@@ -68,18 +71,19 @@ class SimpleTracker {
         // Simple approximation .. if we consider x_c & y_c to be low enough
         int16_t theta = std::floor(y_c * alpha_y * 1000.f);
         int16_t phi = std::floor(x_c * alpha_x * 1000.f);
-	
-	tf2::Quaternion qTurret;
-	auto transformTurret = tBuffer.lookupTransform("base_link", "turret", ros::Time(0));
-	tf2::convert(transformTurret.transform.rotation, qTurret);
 
-	std::cout << qTurret << '\n';
+        tf2::Quaternion qTurret;
+        auto transformTurret =
+            tBuffer.lookupTransform("base_link", "turret", ros::Time(0));
+        tf2::convert(transformTurret.transform.rotation, qTurret);
 
-	double roll, pitch, yaw;
-	tf2::Matrix3x3 m(qTurret);
-	m.getRPY(roll, pitch, yaw);
+        std::cout << qTurret << '\n';
 
-	std::cout << "Turret : p = " << pitch << ", y = " << yaw << '\n';
+        double roll, pitch, yaw;
+        tf2::Matrix3x3 m(qTurret);
+        m.getRPY(roll, pitch, yaw);
+
+        std::cout << "Turret : p = " << pitch << ", y = " << yaw << '\n';
 
         target.theta = pitch - theta;
         target.phi = yaw + phi;
@@ -88,6 +92,12 @@ class SimpleTracker {
         target.stamp = ros::Time::now();
 
         return target;
+    }
+
+    void reconf(decision::DecisionConfig& config, uint32_t level) {
+        enemy_color = config.enemy_color;
+        std::cout << "New enemy color set to "
+                  << (enemy_color == 0 ? "red" : "blue") << "\n";
     }
 
   private:
@@ -123,6 +133,10 @@ int main(int argc, char** argv) {
     }
 
     SimpleTracker tracker(nh, enemy_color);
+
+    dynamic_reconfigure::Server<decision::DecisionConfig> server;
+    server.setCallback(
+        [&tracker](auto& c, auto level) { tracker.reconf(c, level); });
 
     ros::spin();
 }
