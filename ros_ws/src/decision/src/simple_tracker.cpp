@@ -63,8 +63,8 @@ class SimpleTracker {
         std::cout << "Det : " << trk.x << " ( " << trk.w << " ) " << trk.y
                   << " ( " << trk.h << " )\n";
 
-        auto x_c = static_cast<float>(trk.x + trk.w / 2 - im_w / 2);
-        auto y_c = static_cast<float>(trk.y + trk.h / 2 - im_h / 2);
+        auto x_c = static_cast<float>(trk.x + trk.w / 2.f - im_w / 2.f);
+        auto y_c = static_cast<float>(trk.y + trk.h / 2.f - im_h / 2.f);
 
         std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
 
@@ -73,9 +73,15 @@ class SimpleTracker {
         int16_t phi = std::floor(x_c * alpha_x * 1000.f);
 
         tf2::Quaternion qTurret;
-        auto transformTurret =
-            tBuffer.lookupTransform("base_link", "turret", ros::Time(0));
-        tf2::convert(transformTurret.transform.rotation, qTurret);
+
+        try {
+            auto transformTurret =
+                tBuffer.lookupTransform("base_link", "turret", ros::Time(0));
+            tf2::convert(transformTurret.transform.rotation, qTurret);
+        } catch (tf2::LookupException e) {
+            // Couldn't find lookup. Keep identity
+            qTurret = tf2::Quaternion::getIdentity();
+        }
 
         std::cout << qTurret << '\n';
 
@@ -109,8 +115,8 @@ class SimpleTracker {
 
     tracking::Tracklet last_trk;
 
-    float im_w = 416.f / 2.f;
-    float im_h = 416.f / 2.f;
+    float im_w = 416.f;
+    float im_h = 416.f;
 
     // Scaling factor
     float alpha_y = 0.0007;
