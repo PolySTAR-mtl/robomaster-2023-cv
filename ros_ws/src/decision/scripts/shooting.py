@@ -44,6 +44,7 @@ class Shooter:
 
             if self.count >= self.successive_tresh and not self.is_shooting:
                 # Target acquired. Start shooting now
+                self.is_shooting = True
                 self.pub_shoot.publish(Shoot(shoot=True))
 
 

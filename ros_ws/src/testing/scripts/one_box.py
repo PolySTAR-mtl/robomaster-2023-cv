@@ -23,13 +23,13 @@ def main():
     amplitude_circle = 200.
 
     f_circle = 30
-    f_amplitude = 5
+    f_amplitude = 8
 
     x_c = 416. / 2.
     y_c = 416. / 2.
 
-    w = 0.1
-    h = 0.1
+    w = 10
+    h = 10
 
     print('rad,x,y')
 
