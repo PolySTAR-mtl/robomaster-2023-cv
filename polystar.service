@@ -6,5 +6,4 @@ ExecStart=/bin/bash /home/polystar/robomaster-2023-cv/polystar.sh
 
 [Install]
 After=network-online.target
-Wants=network-online.target
 WantedBy=multi-user.target

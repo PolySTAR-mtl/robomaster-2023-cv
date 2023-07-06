@@ -44,12 +44,12 @@ def is_daemon_running():
     return proc.stdout.contains('active (running)')
 
 def call_systemd(command: str):
-    proc = subprocess.run(f'{sysctl} {command} polystar', shell=True, capture_output=True)
+    proc = subprocess.run(f'{sysctl} {command} polystar --no-pager', shell=True, capture_output=True)
     if proc.returncode == 0:
         print('Success')
-        return proc.stdout
     else:
         print(f'Error :\n{proc.stderr.decode()}')
+    return proc.stdout
 
 def enable():
     print('Enabling daemon')
