@@ -63,8 +63,8 @@ class SimpleTracker {
         std::cout << "Det : " << trk.x << " ( " << trk.w << " ) " << trk.y
                   << " ( " << trk.h << " )\n";
 
-        auto x_c = static_cast<float>(trk.x + trk.w / 2.f - im_w / 2.f);
-        auto y_c = static_cast<float>(trk.y + trk.h / 2.f - im_h / 2.f);
+        auto x_c = static_cast<float>(trk.x + trk.w / 2.f - center_x);
+        auto y_c = static_cast<float>(trk.y + trk.h / 2.f - center_y);
 
         std::cout << "x_c = " << x_c << " ; y_c = " << y_c << '\n';
 
@@ -103,8 +103,13 @@ class SimpleTracker {
 
     void reconf(decision::DecisionConfig& config, uint32_t level) {
         enemy_color = config.enemy_color;
+        center_x = config.trim_x;
+        center_y = config.trim_y;
+
         std::cout << "New enemy color set to "
                   << (enemy_color == 0 ? "red" : "blue") << "\n";
+        std::cout << "Trim : \n\tx : " << center_x << "\n\ty : " << center_y
+                  << '\n';
     }
 
   private:
@@ -115,8 +120,8 @@ class SimpleTracker {
 
     tracking::Tracklet last_trk;
 
-    float im_w = 416.f;
-    float im_h = 416.f;
+    float center_x = 416.f / 2.f;
+    float center_y = 416.f / 2.f;
 
     // Scaling factor
     float alpha_y = 0.0007;
