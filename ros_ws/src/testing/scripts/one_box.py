@@ -22,14 +22,16 @@ def main():
 
     amplitude_circle = 200.
 
-    f_circle = 1
-    f_amplitude = 30
+    f_circle = 30
+    f_amplitude = 5
 
     x_c = 416. / 2.
     y_c = 416. / 2.
 
-    w = 30
-    h = 20
+    w = 0.1
+    h = 0.1
+
+    print('rad,x,y')
 
     while not rospy.is_shutdown():
         rad = np.abs(amplitude_circle * np.cos(t * f_amplitude * inc / freq))
@@ -45,7 +47,7 @@ def main():
         t += inc
         pub_odom.publish(msg)
 
-        print(rad)
+        print(f'{rad},{x + x_c},{y + y_c}')
         rate.sleep()
 
 
