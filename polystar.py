@@ -15,6 +15,7 @@
 import argparse
 import sys
 import subprocess
+import yaml
 
 # Parser
 
@@ -28,6 +29,7 @@ subparser.add_parser('restart', help='Manually restart daemon')
 subparser.add_parser('run', help='Run pipeline')
 subparser.add_parser('stop', help='Stop pipeline')
 subparser.add_parser('status', help='Get pipeline status')
+subparser.add_parser('checklist', help='Pre-match checkup')
 
 set_enemy_parser = subparser.add_parser('set-enemy', help='Set enemy color')
 set_enemy_parser.add_argument('color', choices=['blue', 'red'], help='Enemy color')
@@ -41,7 +43,16 @@ sysctl = '/bin/systemctl --user'
 
 def is_daemon_running():
     proc = subprocess.run(f'{sysctl} status polystar', shell=True, capture_output=True, text=True)
-    return proc.stdout.contains('active (running)')
+    return 'active (running)' in proc.stdout
+
+def get_params(node: str):
+    try:
+        proc = subprocess.run(f'rosrun dynamic_reconfigure dynparam get {node}', shell=True, capture_output=True, timeout=10)
+    except TimeoutError as te:
+        print(f'Error : Unresponsive after {te.timeout} seconds')
+
+    return yaml.load(proc.stdout.decode())
+
 
 def call_systemd(command: str):
     proc = subprocess.run(f'{sysctl} {command} polystar --no-pager', shell=True, capture_output=True)
@@ -87,24 +98,37 @@ def stop():
 
     print('Unimplemented')
 
-def set_enemy(color):
-    print(f'Setting color to {color}')
-
-    color_int = 0 if color == 'red' else 1
+def dynreconf(node: str, param: str, value: any):
     try:
-        proc = subprocess.run(f'rosrun dynamic_reconfigure dynparam set /decision enemy_color {color_int}', shell=True, capture_output=True, timeout=10)
+        proc = subprocess.run(f'rosrun dynamic_reconfigure dynparam set {node} {param} {value}', shell=True, capture_output=True, timeout=10)
     except TimeoutError as te:
         print(f'Error : Unresponsive after {te.timeout} seconds')
-    
+
     if proc.returncode == 0:
         print('Success')
     else:
         print(f'Error :\n{proc.stderr.decode()}')
 
+    return proc
+
+def set_enemy(color):
+    print(f'Setting color to {color}')
+
+    color_int = 0 if color == 'red' else 1
+    dynreconf('decision', 'enemy_color', color_int)
+
 def shoot(val):
     print(f'Shooting to {val}')
 
     print('Unimplemented')
+
+def checklist():
+    running = is_daemon_running()
+    enemy_color = 'red' if get_params('decision')['enemy_color'] == 0 else 'blue'
+
+    print(f'Is daemon running : {running}')
+    print(f'Enemy color       : {enemy_color}')
+
 
 def main():
     args = parser.parse_args()
@@ -128,6 +152,8 @@ def main():
         set_enemy(args.color)
     elif args.command == 'shoot':
         shoot(args.val)
+    elif args.command == 'checklist':
+        checklist()
     else:
         print(f'Unsupported command "{args.command}"', file=sys.stderr)
         sys.exit(-1)
