@@ -13,8 +13,10 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>serial</build_depend>
+  <build_depend>detection</build_depend>
   <build_export_depend>serial</build_export_depend>
   <exec_depend>serial</exec_depend>
+  <exec_depend>detection</exec_depend>
 
   <export></export>
 
