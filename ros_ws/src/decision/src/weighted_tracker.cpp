@@ -156,6 +156,10 @@ class WeightedTracker {
         for (auto trk : trks->tracklets) {
             BoundingBox tracklet(trk);
 
+            std::cout << "Received Tracklet. \n" << "id: " << trk.id << 
+            "x: "<< trk.x << "y: "<< trk.y << "w: "<< trk.w << "h: "<< 
+            trk.h << "class: "<< trk.clss << "score: "<< trk.score;
+
             auto dist = distance(last_trk, trk);
             float size = tracklet.getSize();
             auto type = tracklet.roboType(enemy_color, trks);
@@ -174,6 +178,9 @@ class WeightedTracker {
 
         if (index != -1) {
             last_trk = trks->tracklets[index];
+            std::cout << "Published Tracklet. \n" << "id: " << last_trk.id << 
+            "x: "<< last_trk.x << "y: "<< last_trk.y << "w: "<< last_trk.w << "h: "<< 
+            last_trk.h << "class: "<< last_trk.clss << "score: "<< last_trk.score;
             pub_target.publish(toTarget(last_trk));
         }
     };
