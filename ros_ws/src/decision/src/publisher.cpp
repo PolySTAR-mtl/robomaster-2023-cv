@@ -20,7 +20,8 @@ int main(int argc, char **argv)
     Tracklets container = createTracklet("Papa", 0, 0, 100, 100, 0, 0);
     Tracklets contained = createTracklet("Bebe", 25, 25, 10, 10, 0, 0);  
 
-    chatter_pub.publish(trk);
+    chatter_pub.publish(container);
+    chatter_pub.publish(contained);
 
     ros::spinOnce();
 
