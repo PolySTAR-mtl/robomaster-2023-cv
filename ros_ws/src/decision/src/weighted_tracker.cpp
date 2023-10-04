@@ -27,6 +27,8 @@ int16_t radToMillirad(float rad) { return static_cast<int16_t>(rad * 1000); }
 
 enum class RoboType : int { Base = 3, Standard = 4, Hero = 5, Sentry = 6 };
 
+struct BoundingBox;
+
 struct BoundingBox {
     const float upper_edge; // const
     const float lower_edge;
@@ -36,7 +38,11 @@ struct BoundingBox {
     const float height;
     const float x;
     const float y;
-    const float score = 0.f;
+    float score = 0.f;
+
+    BoundingBox* parent;
+    std::vector<BoundingBox> enfants;
+    int nbEnfants;
 
     int clss;
 
@@ -51,9 +57,9 @@ struct BoundingBox {
     int getSize() { return this->width * this->height; }
 
     float roboType(int enemy_color, const tracking::TrackletsConstPtr& trks) {
-        switch (this->clss) {
+        switch (this->clss) { //Si le robot est X on va dans la fonction scoreToReturn
         case static_cast<int>(RoboType::Base):
-            return scoreReturn(enemy_color, weightBase, trks);
+            return scoreReturn(enemy_color, weightBase, trks); 
         case static_cast<int>(RoboType::Standard):
             return scoreReturn(enemy_color, weightStandard, trks);
         case static_cast<int>(RoboType::Hero):
@@ -61,22 +67,30 @@ struct BoundingBox {
         case static_cast<int>(RoboType::Sentry):
             return scoreReturn(enemy_color, weightSentry, trks);
         default:
-            return 0;
+            return 0; //Si la bbox n'est pas englobante, on ne retourne rien pour le score du type de robot
         }
     }
 
     float scoreReturn(int enemy_color, float scoreToReturn,
                       const tracking::TrackletsConstPtr& trks) {
-        bool found = false;
-        std::vector<BoundingBox> enemy_boxes = this->findBoxes(trks);
 
-        for (const auto& box : enemy_boxes) {
-            if (box.clss == enemy_color) {
-                return scoreToReturn;
+        std::vector<BoundingBox> enemy_boxes = this->findBoxes(trks); 
+        //on va chercher toutes les bbox à l'intérieur de celle-ci
+
+        bool found = false;
+
+        for (auto& box : enemy_boxes) {
+            if (box.clss == enemy_color) {    //si le module d'armure est de la couleur ennemie
+                box.parent = this;            //on désigne le parent de ce module pour être celui-ci 
+                this->enfants.push_back(box); //on ajoute aux enfants de cette bbox le module d'armure
+                this->nbEnfants++;            //on incrémente le nombre d'enfants de cette bbox 
+                found = true;
             }
         }
 
-        return 0;
+        if(found)                   //Si on a trouvé au moins un module d'armure dans la bbox 
+            return scoreToReturn;   //On retourne le score qui équivaut à cette classe 
+        return 0;                   //Sinon 0
     }
 
     std::vector<BoundingBox>
@@ -160,17 +174,31 @@ class WeightedTracker {
             "x: "<< trk.x << "y: "<< trk.y << "w: "<< trk.w << "h: "<< 
             trk.h << "class: "<< trk.clss << "score: "<< trk.score;
 
-            auto dist = distance(last_trk, trk);
-            float size = tracklet.getSize();
-            auto type = tracklet.roboType(enemy_color, trks);
+            auto type = tracklet.roboType(enemy_color, trks); //Ici on définit également quelles bbox sont des enfants et des parents
+            tracklet.score += type; //Le score du type est 0 si la bbox est un module d'armure
 
-            auto score = type;
-            score += size * BoundingBox::weightSize;
-            score += dist * BoundingBox::weightDist;
+            if(tracklet.clss == 3 or tracklet.clss == 4 or tracklet.clss == 5 or tracklet.clss == 6){
+                BoundingBox* best_target;
+                float best_score = 0;
 
-            if (score > best_score && enemy_color == int(trk.clss)) {
-                index = i;
-                best_score = score;
+                for(BoundingBox enfant : tracklet.enfants){ //Pour tous les enfants d'une bbox parent
+                    float size = enfant.getSize();          //On regarde laquelle a le meilleur score basé sur sa grandeur
+                    auto dist = distance(last_trk, enfant); //et sur sa distance avec le dernier trk
+                    enfant.score += size * BoundingBox::weightSize;
+                    enfant.score += dist * BoundingBox::weightDist;
+                    if(enfant.score > best_score){
+                        best_target = &enfant;
+                        best_score = enfant.score;
+                    }
+                }
+
+                tracklet.score += best_score; //On ajoute au score du tracklet parent le score du meilleur enfant
+            }
+            
+
+            if (tracklet.score > best_score) {  //On vise donc sur le robot avec le meilleur score
+                index = i;                      //Ce qui combine son score de type et le score de son meilleur enfant pour la distance et la taille
+                best_score = tracklet.score;
             }
 
             ++i;
