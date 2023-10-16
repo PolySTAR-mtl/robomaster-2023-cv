@@ -7,9 +7,7 @@ export WS="/home/polystar/robomaster-2023-cv/ros_ws"
 source /home/polystar/.bashrc
 source $WS/devel/setup.bash
 
-# Run launch file
+# Record
 
-sleep 10 # safeguard
-cd $WS
-roslaunch robomaster.launch
-
+cd /home/polystar/bags
+rosbag record -a --duration=6m

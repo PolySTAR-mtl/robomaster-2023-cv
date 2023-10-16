@@ -30,6 +30,7 @@ subparser.add_parser('run', help='Run pipeline')
 subparser.add_parser('stop', help='Stop pipeline')
 subparser.add_parser('status', help='Get pipeline status')
 subparser.add_parser('checklist', help='Pre-match checkup')
+subparser.add_parser('record', help='Start recording')
 
 set_enemy_parser = subparser.add_parser('set-enemy', help='Set enemy color')
 set_enemy_parser.add_argument('color', choices=['blue', 'red'], help='Enemy color')
@@ -54,8 +55,8 @@ def get_params(node: str):
     return yaml.load(proc.stdout.decode())
 
 
-def call_systemd(command: str):
-    proc = subprocess.run(f'{sysctl} {command} polystar --no-pager', shell=True, capture_output=True)
+def call_systemd(command: str, service='polystar'):
+    proc = subprocess.run(f'{sysctl} {command} {service} --no-pager', shell=True, capture_output=True)
     if proc.returncode == 0:
         print('Success')
     else:
@@ -87,8 +88,7 @@ def status():
 
 def run():
     print('Running the pipeline')
-
-    print('Success')
+    print('Unimplemented')
 
 def stop():
     """
@@ -128,7 +128,6 @@ def checklist():
 
     print(f'Is daemon running : {running}')
     print(f'Enemy color       : {enemy_color}')
-
 
 def main():
     args = parser.parse_args()

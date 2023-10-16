@@ -1,0 +1,9 @@
+[Unit]
+Description=Polystar main script
+
+[Service]
+ExecStart=/bin/bash /home/polystar/robomaster-2023-cv/record.sh
+
+[Install]
+After=network-online.target
+WantedBy=multi-user.target
