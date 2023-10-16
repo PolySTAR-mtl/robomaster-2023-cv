@@ -365,10 +365,12 @@ void SerialSpinner::callbackShoot(const serial::ShootConstPtr& shoot) {
         return;
     }
 
-    OutgoingMessage order{.shoot_order = {shoot->shoot ? '\xFF' : '\0'}};
+    OutgoingMessage order{.shoot_order = {}};
 
-    std::cout << "Serial:: Shooting " << (shoot->shoot ? "enabled" : "disabled")
-              << '\n';
+    order.shoot_order.shoot = shoot->shoot ? '\xFF' : '\0';
+
+    std::cout << "Serial:: Shooting "
+              << static_cast<int>(order.shoot_order.shoot) << '\n';
     sendMessage(order);
 }
 

@@ -24,7 +24,7 @@ class Controller:
         self.rate = rate
         self.timeout = lost_target_timeout
         self.freq_search = 1
-        self.follow_speed = 1
+        self.follow_speed = 0.005
         self.scale = 1/15
         self.speed_noise = 0.05
 
@@ -73,7 +73,8 @@ class Controller:
         msg = self.last_order
         msg.v_x = self.draw()
         msg.v_y = self.draw()
-        msg.omega += self.scale * np.sin(self.freq_search * self.step)
+        msg.omega += np.sin(self.freq_search * self.step *
+                            self.freq_search) / 8000
 
         self.pub_movement.publish(msg)
 
