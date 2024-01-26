@@ -23,8 +23,12 @@ sets = ['robomaster_Central China Regional Competition', 'robomaster_Final Tourn
 
 # List of classes
 
-classes = ["red_armor", "blue_armor", "grey_armor", "base", "watcher", "car"]
+classes = ["red_armor", "blue_armor", "grey_armor", "base", "std", "hro"]   #["red_armor", "blue_armor", "grey_armor", "base", "car"]
 
+def isInside(smallBox, bigBox):
+    if (smallBox['xmin'] > bigBox['xmin'] and smallBox['ymin'] > bigBox['ymin'] and smallBox['xmax'] < bigBox['xmax'] and smallBox['ymax'] < bigBox['ymax']):
+        return True
+    return False
 
 def convert(size, box):
     dw = 1./(size[0])
@@ -57,6 +61,8 @@ def convert_annotation(set_name, image_id):
     size = root.find('size')
     w = int(size.find('width').text)
     h = int(size.find('height').text)
+    # Used to remove engineer robot from data if it's the only "car" in the image
+    isEngiInThere = None
 
     for obj in root.iter('object'):
         difficult = 0
@@ -64,7 +70,34 @@ def convert_annotation(set_name, image_id):
             difficult = obj.find('difficulty').text
 
         cls = obj.find('name').text
+
         cls_color = ""
+        if cls == "car":
+            for obj1 in root.iter('object'):
+                if obj1.find('name').text == "armor":
+                    b1 = {'xmin': float(obj.find('bndbox').find('xmin').text), 'xmax': float(obj.find('bndbox').find('xmax').text), 'ymin': float(
+                    obj.find('bndbox').find('ymin').text), 'ymax': float(obj.find('bndbox').find('ymax').text)}
+                    b2 = {'xmin': float(obj1.find('bndbox').find('xmin').text), 'xmax': float(obj1.find('bndbox').find('xmax').text), 'ymin': float(
+                    obj1.find('bndbox').find('ymin').text), 'ymax': float(obj1.find('bndbox').find('ymax').text)}
+                    if isInside(b2 ,b1):
+                        cls_id = int(obj1.find("armor_class").text)
+                        if cls_id in [3, 4, 5]:
+                            cls_id = 4
+                            cls = 'std'
+                            isEngiInThere = False
+                        elif cls_id == 1:
+                            cls_id = 5
+                            cls = 'hro'
+                            isEngiInThere = False
+                        elif cls_id == 2 and isEngiInThere != False:
+                            isEngiInThere = True
+                        else:
+                            raise Exception("Something went wrong...")
+                            
+                        break
+
+
+
 
         if obj.find('armor_color') is not None:
             cls_color = obj.find('armor_color').text + "_"
@@ -83,6 +116,14 @@ def convert_annotation(set_name, image_id):
                        " ".join([str(a) for a in bb]) + '\n')
 
     out_file.close()
+    
+    # If only engineer in the picture, remove both image and the anotated file
+    # return false at adding the file in the list
+    if isEngiInThere:
+        os.remove(f'../dataset/{set_name}/labels/{image_id}.txt')
+        os.remove(f'../dataset/{set_name}/image_annotation/{image_id}.xml')
+        os.remove(f'../dataset/{set_name}/image/{image_id}.jpg')
+        return False
 
     return True
 
